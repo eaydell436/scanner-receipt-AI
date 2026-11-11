@@ -1,0 +1,450 @@
+/* ================= SISTEM TEMA (LIGHT & DARK) ================= */
+:root {
+  --bg-body: #0f111a;
+  --bg-card: #1c1f2b;
+  --bg-card-light: #2a2d3e;
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --primary: #3b82f6;
+  --border-color: #333;
+}
+
+[data-theme='light'] {
+  --bg-body: #f3f4f6;
+  --bg-card: #ffffff;
+  --bg-card-light: #e5e7eb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --primary: #2563eb;
+  --border-color: #d1d5db;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Latar belakang luar (bila buka di laptop/PC) */
+body {
+  background-color: #000000; /* Warna gelap di luar 'telefon' */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden; /* Elak scroll pada body utama */
+}
+
+/* ================= BUNGKUSAN MOBILE (PHONE FRAME) ================= */
+.mobile-wrapper {
+  width: 100%;
+  max-width: 430px; /* Lebar standard iPhone Pro Max */
+  height: 100vh;
+  max-height: 900px;
+  background-color: var(--bg-body);
+  position: relative;
+  overflow: hidden; /* Kandungan tidak terkeluar dari bingkai */
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.05); /* Efek bayang pada desktop */
+  border-radius: 30px; /* Bucu bulat pada desktop */
+}
+
+/* Bila dibuka pada telefon sebenar, penuhkan skrin & buang bucu bulat */
+@media (max-width: 450px) {
+  .mobile-wrapper {
+    max-width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* Kawasan yang boleh di-scroll */
+.app-content {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 90px; /* Jarak supaya kandungan tidak tertutup bottom nav */
+}
+
+/* Sembunyikan scrollbar untuk nampak macam app */
+.app-content::-webkit-scrollbar {
+  display: none;
+}
+.app-content {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ================= VIEW ================= */
+.view {
+  display: none;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+.view.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Butang Tema */
+.theme-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
+/* ================= UPLOAD VIEW ================= */
+.scan-info {
+  background-color: var(--bg-card);
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  margin-top: 45px;
+  border: 1px solid var(--border-color);
+}
+.scan-info h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.scan-info p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: 20px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+.upload-circle {
+  width: 100px;
+  height: 100px;
+  background-color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.upload-area h2 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.upload-area p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.upload-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 20px;
+}
+.action-btn {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Animasi Spinner Loading (Untuk Scan) */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================= CATEGORY SELECTION ================= */
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  margin-top: 10px;
+}
+.category-header h1 {
+  font-size: 24px;
+}
+.manage-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.search-cat {
+  margin-bottom: 25px;
+}
+.search-cat input {
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: 15px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.section-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+  margin-top: 20px;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  row-gap: 20px;
+}
+.cat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.cat-icon {
+  width: 65px;
+  height: 65px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  font-size: 24px;
+  transition: transform 0.2s;
+}
+.cat-item:active .cat-icon {
+  transform: scale(0.95);
+}
+.cat-name {
+  font-size: 12px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Warna Pastel Ikon (Dark Mode) */
+[data-theme='dark'] .bg-fnb {
+  background: #ffebd3;
+  color: #d97706;
+}
+[data-theme='dark'] .bg-util {
+  background: #fef3c7;
+  color: #b45309;
+}
+[data-theme='dark'] .bg-acc {
+  background: #d1fae5;
+  color: #047857;
+}
+[data-theme='dark'] .bg-trans {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+[data-theme='dark'] .bg-shop {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+[data-theme='dark'] .bg-ins {
+  background: #fef3c7;
+  color: #b45309;
+}
+[data-theme='dark'] .bg-med {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+[data-theme='dark'] .bg-sub {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+/* Warna Pastel Ikon (Light Mode) */
+[data-theme='light'] .bg-fnb {
+  background: #fff7ed;
+  color: #ea580c;
+}
+[data-theme='light'] .bg-util {
+  background: #fefce8;
+  color: #ca8a04;
+}
+[data-theme='light'] .bg-acc {
+  background: #ecfdf5;
+  color: #059669;
+}
+[data-theme='light'] .bg-trans {
+  background: #eff6ff;
+  color: #2563eb;
+}
+[data-theme='light'] .bg-shop {
+  background: #faf5ff;
+  color: #9333ea;
+}
+[data-theme='light'] .bg-med {
+  background: #fef2f2;
+  color: #dc2626;
+}
+[data-theme='light'] .bg-ins {
+  background: #fefce8;
+  color: #ca8a04;
+}
+[data-theme='light'] .bg-sub {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+/* Tanda Check (Selected) */
+.check-mark {
+  display: none;
+  position: absolute;
+  bottom: 25px;
+  right: 0px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-body);
+}
+.cat-item.selected .cat-icon {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.cat-item.selected .check-mark {
+  display: flex;
+}
+
+/* Create Button */
+.create-cat-btn {
+  border: 2px dashed var(--border-color);
+  background: transparent;
+  border-radius: 18px;
+  width: 65px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+/* Info Banner */
+.info-banner {
+  background-color: var(--bg-card-light);
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 40px;
+  line-height: 1.5;
+  border: 1px solid var(--border-color);
+}
+.info-icon {
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* ================= BOTTOM NAVIGATION ================= */
+.bottom-nav {
+  position: absolute; /* Ditukar dari 'fixed' supaya duduk dalam mobile-wrapper */
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0 20px 0;
+  z-index: 100;
+}
+
+.nav-item {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  width: 80px;
+}
+.nav-item.active {
+  color: var(--primary);
+}
+
+/* Butang tengah (Scan) */
+.scan-icon-wrapper {
+  width: 60px;
+  height: 60px;
+  background-color: var(--bg-body);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--bg-card);
+  position: relative;
+  top: -15px;
+  box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.2);
+}
+.nav-item.active .scan-icon-wrapper {
+  background-color: var(--primary);
+  color: white;
+  border: 4px solid var(--bg-card);
+}

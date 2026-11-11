@@ -90,6 +90,7 @@ async function initAuth() {
       currentUser = data.user;
     }
     $('user-info').textContent = `ID pengguna: ${currentUser.id.slice(0, 8)}…`;
+    renderAccount();
     await fetchReceipts();
   } catch (err) {
     console.error('Gagal log masuk:', err);
@@ -119,7 +120,10 @@ function switchView(viewName) {
   );
   $('app-content').scrollTop = 0;
   if (viewName === 'dashboard') renderDashboard();
-  if (viewName === 'settings') renderCategorySettings();
+  if (viewName === 'settings') {
+    renderCategorySettings();
+    renderAccount();
+  }
 }
 
 function triggerScan() {
@@ -560,6 +564,101 @@ async function deleteAllData() {
     toast('Gagal padam: ' + err.message);
   }
 }
+
+// ==========================================
+// 7b. AKAUN (LOG MASUK E-MEL TANPA KATA LALUAN)
+// ==========================================
+const REDIRECT_URL = location.origin + location.pathname;
+const isValidEmail = (e) => /^\S+@\S+\.\S+$/.test(e);
+
+function renderAccount() {
+  const box = $('account-box');
+  if (!box || !currentUser) return;
+
+  if (currentUser.is_anonymous) {
+    const pending = currentUser.new_email
+      ? `<p class="acc-note">⏳ Menunggu pengesahan untuk <b>${esc(currentUser.new_email)}</b>. Semak e-mel anda dan klik pautan.</p>`
+      : '';
+    box.innerHTML = `
+      <div class="setting-row">
+        <span>Status</span><span class="muted">👤 Tetamu (data pada peranti ini sahaja)</span>
+      </div>
+      ${pending}
+      <div class="acc-form">
+        <input type="email" id="acc-email" placeholder="E-mel anda" autocomplete="email" />
+        <button class="btn btn-primary" onclick="linkAccount()">Simpan akaun (kekalkan data)</button>
+        <button class="btn" onclick="sendLoginLink()">Dah ada akaun? Hantar pautan log masuk</button>
+      </div>
+      <p class="acc-note">Tiada kata laluan diperlukan. Kami hantar pautan ke e-mel anda.</p>`;
+  } else {
+    box.innerHTML = `
+      <div class="setting-row">
+        <span>Log masuk sebagai</span><span class="muted">${esc(currentUser.email || '')}</span>
+      </div>
+      <div class="setting-row">
+        <span>Log keluar</span>
+        <button class="btn btn-danger" onclick="signOutAccount()">Log keluar</button>
+      </div>`;
+  }
+}
+
+// Tukar akaun tetamu kepada akaun e-mel (data sedia ada KEKAL)
+async function linkAccount() {
+  const email = $('acc-email').value.trim();
+  if (!isValidEmail(email)) return toast('Sila isi e-mel yang sah.');
+  const { error } = await supabaseClient.auth.updateUser({ email }, { emailRedirectTo: REDIRECT_URL });
+  if (error) {
+    const exists = /already|registered|exists/i.test(error.message);
+    return toast(exists ? 'E-mel itu sudah berdaftar. Guna "Hantar pautan log masuk".' : 'Gagal: ' + error.message);
+  }
+  const { data } = await supabaseClient.auth.getUser();
+  if (data?.user) currentUser = data.user;
+  renderAccount();
+  toast('Pautan pengesahan dihantar. Semak e-mel anda.');
+}
+
+// Untuk peranti baharu: log masuk ke akaun sedia ada
+async function sendLoginLink() {
+  const email = $('acc-email').value.trim();
+  if (!isValidEmail(email)) return toast('Sila isi e-mel yang sah.');
+  if (
+    receipts.length &&
+    !confirm('Data tetamu pada peranti ini TIDAK akan dipindahkan ke akaun yang anda log masuk. Teruskan?')
+  )
+    return;
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: REDIRECT_URL, shouldCreateUser: false },
+  });
+  if (error) {
+    const notFound = /signups not allowed|not found/i.test(error.message);
+    return toast(notFound ? 'Akaun dengan e-mel itu tidak dijumpai.' : 'Gagal: ' + error.message);
+  }
+  toast('Pautan log masuk dihantar. Semak e-mel anda.');
+}
+
+async function signOutAccount() {
+  if (!confirm('Log keluar? Anda boleh log masuk semula dengan e-mel yang sama.')) return;
+  await supabaseClient.auth.signOut();
+  location.reload(); // mulakan sesi tetamu baharu
+}
+
+// Kemas kini bila sesi berubah (klik pautan e-mel, log masuk, dll)
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  // elak await panggilan Supabase terus dalam callback
+  setTimeout(async () => {
+    if (!session?.user) return;
+    const changed = currentUser?.id !== session.user.id;
+    currentUser = session.user;
+    renderAccount();
+    if (changed && event !== 'INITIAL_SESSION') {
+      await fetchReceipts();
+      toast('Log masuk berjaya.');
+    } else if (event === 'USER_UPDATED' && !session.user.is_anonymous) {
+      toast('E-mel disahkan. Akaun anda kini kekal!');
+    }
+  }, 0);
+});
 
 // ==========================================
 // 8. EVENT LISTENERS & MULA

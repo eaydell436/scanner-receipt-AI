@@ -302,6 +302,9 @@ textarea { resize: none; }
   box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.2); font-size: 24px;
 }
 
+      .acc-form { display: grid; gap: 10px; padding: 14px 0; }
+      .acc-form .btn { width: 100%; }
+      .acc-note { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding-bottom: 12px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
@@ -412,6 +415,9 @@ textarea { resize: none; }
               <button class="btn btn-primary" onclick="addCategory()">Tambah</button>
             </div>
           </div>
+
+          <div class="section-title">AKAUN</div>
+          <div class="card" id="account-box"></div>
 
           <div class="section-title">DATA</div>
           <div class="card">

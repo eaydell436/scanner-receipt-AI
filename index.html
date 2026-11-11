@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Receipt Tracker AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -54,20 +54,26 @@
   transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; height: 100%; }
+
 body {
   background-color: var(--bg-outer);
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 .mobile-wrapper {
   width: 100%;
   max-width: 430px;
-  height: 100vh;
+  height: 100%;
   max-height: 900px;
+  display: flex;
+  flex-direction: column;
   background-color: var(--bg-body);
   position: relative;
   overflow: hidden;
@@ -75,20 +81,22 @@ body {
   border-radius: 16px;
   color: var(--text-main);
 }
-@media (max-width: 450px) {
+@media (max-width: 450px), (max-height: 600px) {
   .mobile-wrapper {
     max-width: 100%;
-    height: 100dvh;
+    max-height: none;
     border: none;
     border-radius: 0;
   }
 }
 
 .app-content {
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 100px;
+  overscroll-behavior: contain;
+  padding-bottom: 24px;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -148,7 +156,7 @@ textarea { resize: none; }
 .btn-block { width: 100%; }
 
 /* ================= HISTORY ================= */
-.filters { display: grid; grid-template-columns: 1fr 120px; gap: 10px; margin-bottom: 18px; }
+.filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(96px, 128px); gap: 10px; margin-bottom: 18px; }
 .search-wrap { position: relative; }
 .search-wrap .ic { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
 .search-wrap input { padding-left: 38px; }
@@ -197,7 +205,7 @@ textarea { resize: none; }
   font-size: 30px; font-weight: 600; margin: 6px 0 18px;
   color: var(--text-main); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
 }
-.balance-details { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border-color); padding-top: 14px; }
+.balance-details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--border-color); padding-top: 14px; }
 .detail-box:first-child { padding-right: 14px; border-right: 1px solid var(--border-color); }
 .detail-box:last-child { padding-left: 14px; }
 .detail-box span { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
@@ -242,7 +250,7 @@ textarea { resize: none; }
 }
 .upload-area h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
 .upload-area p { color: var(--text-muted); font-size: 14px; }
-.upload-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.upload-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .action-btn {
   background-color: var(--bg-card); border: 1px solid var(--border-color);
   color: var(--text-main); padding: 14px 10px; border-radius: 12px;
@@ -271,10 +279,10 @@ textarea { resize: none; }
 }
 .del:hover { color: var(--danger); }
 .cat-add { display: grid; gap: 10px; padding: 14px 0; }
-.cat-add-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.cat-add-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .cat-add-row input { padding: 10px 12px; font-size: 15px; }
 .cat-add-row .btn { padding: 10px 14px; }
-.icon-picker { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; }
+.icon-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
 .icon-opt {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--border-color); border-radius: 8px;
@@ -298,7 +306,7 @@ textarea { resize: none; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .sheet-head h2 { font-size: 18px; font-weight: 600; color: var(--text-main); }
 .sheet-head button { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; padding: 4px; }
-.type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.type-toggle { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: 14px; }
 .type-toggle button {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 11px; border-radius: 8px; border: 1px solid var(--border-color);
@@ -307,7 +315,7 @@ textarea { resize: none; }
 .type-toggle button.active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .field { margin-bottom: 12px; }
 .field label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
 .image-box {
   border: 1px dashed var(--border-color); border-radius: 12px; padding: 12px;
   margin-bottom: 16px; background: var(--bg-card);
@@ -329,16 +337,20 @@ textarea { resize: none; }
 
 /* ================= BOTTOM NAV ================= */
 .bottom-nav {
-  position: absolute; bottom: 0; left: 0; width: 100%;
+  flex-shrink: 0;
+  width: 100%;
   background-color: var(--bg-card); border-top: 1px solid var(--border-color);
-  display: flex; justify-content: space-around; align-items: center;
-  padding: 8px 0 18px; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center; gap: 2px;
+  padding: 8px 4px calc(10px + env(safe-area-inset-bottom, 0px));
+  position: relative; z-index: 100;
 }
 .nav-item {
+  flex: 1 1 0; min-width: 0;
   background: transparent; border: none; color: var(--text-muted);
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  cursor: pointer; font-size: 11px; font-weight: 500; width: 64px; border-radius: 8px; padding: 2px 0;
+  cursor: pointer; font-size: 11px; font-weight: 500; border-radius: 8px; padding: 2px 0;
 }
+.nav-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-item.active { color: var(--primary); }
 .scan-icon-wrapper {
   width: 52px; height: 52px; background-color: var(--primary); color: var(--on-primary);
@@ -350,6 +362,31 @@ textarea { resize: none; }
 .acc-form .btn { width: 100%; }
 .acc-note { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding-bottom: 12px; display: flex; gap: 8px; align-items: flex-start; }
 .acc-note .ic { margin-top: 1px; }
+
+/* ================= ANTI-OVERFLOW (zoom / saiz teks) ================= */
+input[type='date'], input[type='month'] { -webkit-appearance: none; appearance: none; min-height: 46px; }
+input, select, textarea { min-width: 0; max-width: 100%; }
+.view, .card, .receipt-item, .setting-row, .detail-box, .field, .scan-info { min-width: 0; }
+.view h1, .subtitle, .setting-row span, .scan-info h3, .scan-info p, .empty-msg,
+.detail-box h4, .balance-card h2, .bar-label span, .acc-note, .upload-area p { overflow-wrap: anywhere; }
+.setting-row { flex-wrap: wrap; }
+.setting-row .muted { text-align: right; flex: 1 1 auto; min-width: 0; }
+.balance-card h2 { font-size: clamp(22px, 8vw, 30px); }
+.receipt-amount { flex-shrink: 0; }
+.upload-area { height: auto; min-height: 260px; padding: 24px 16px; }
+.btn, .action-btn, .type-toggle button { min-width: 0; max-width: 100%; }
+.sheet { overscroll-behavior: contain; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+.toast { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+
+/* ================= TOGGLE BAHASA ================= */
+.seg { display: inline-flex; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+.seg button {
+  border: none; background: var(--bg-card); color: var(--text-muted);
+  padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--border-color); }
+.seg button.active { background: var(--primary); color: var(--on-primary); }
+.seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
@@ -403,12 +440,12 @@ textarea { resize: none; }
       <div class="app-content" id="app-content">
         <!-- ===== HISTORY ===== -->
         <main id="view-history" class="view active">
-          <h1>Sejarah</h1>
+          <h1 data-i18n="title_history"></h1>
           <p class="subtitle" id="history-count">0 resit</p>
           <div class="filters">
             <div class="search-wrap">
               <svg class="ic ic-sm"><use href="#i-search" /></svg>
-              <input type="text" id="search-input" placeholder="Cari kedai atau nota" />
+              <input type="text" id="search-input" data-i18n-placeholder="search_ph" />
             </div>
             <select id="filter-cat"></select>
           </div>
@@ -417,24 +454,24 @@ textarea { resize: none; }
 
         <!-- ===== DASHBOARD ===== -->
         <main id="view-dashboard" class="view">
-          <h1>Ringkasan</h1>
-          <p class="subtitle">Kosongkan bulan untuk lihat semua data</p>
+          <h1 data-i18n="title_dashboard"></h1>
+          <p class="subtitle" data-i18n="dash_sub"></p>
           <input type="month" id="month-input" />
           <header class="balance-card">
-            <p class="label">Baki bersih</p>
+            <p class="label" data-i18n="net_balance"></p>
             <h2 id="dash-net">MYR 0.00</h2>
             <div class="balance-details">
               <div class="detail-box in">
-                <span><svg class="ic ic-sm"><use href="#i-trend-up" /></svg>Pendapatan</span>
+                <span><svg class="ic ic-sm"><use href="#i-trend-up" /></svg><span data-i18n="income"></span></span>
                 <h4 id="dash-income">MYR 0.00</h4>
               </div>
               <div class="detail-box out">
-                <span><svg class="ic ic-sm"><use href="#i-trend-down" /></svg>Perbelanjaan</span>
+                <span><svg class="ic ic-sm"><use href="#i-trend-down" /></svg><span data-i18n="expense"></span></span>
                 <h4 id="dash-expense">MYR 0.00</h4>
               </div>
             </div>
           </header>
-          <div class="section-title">Perbelanjaan mengikut kategori</div>
+          <div class="section-title" data-i18n="by_category"></div>
           <div id="dash-breakdown"></div>
         </main>
 
@@ -443,8 +480,8 @@ textarea { resize: none; }
           <div class="scan-info">
             <div class="badge"><svg class="ic"><use href="#i-scan" /></svg></div>
             <div>
-              <h3>Tambah resit</h3>
-              <p>Imbas dengan kamera, pilih dari galeri, atau taip manual</p>
+              <h3 data-i18n="add_receipt"></h3>
+              <p data-i18n="scan_info_sub"></p>
             </div>
           </div>
 
@@ -452,16 +489,16 @@ textarea { resize: none; }
             <div class="upload-circle">
               <svg class="ic ic-xl"><use href="#i-camera" /></svg>
             </div>
-            <h2>Imbas resit</h2>
-            <p>Ambil gambar resit dengan kamera</p>
+            <h2 data-i18n="scan_title"></h2>
+            <p data-i18n="scan_sub"></p>
           </section>
 
           <div class="upload-actions">
             <button class="action-btn" onclick="openSheet()">
-              <svg class="ic ic-lg"><use href="#i-pencil" /></svg><span>Manual</span>
+              <svg class="ic ic-lg"><use href="#i-pencil" /></svg><span data-i18n="manual"></span>
             </button>
             <button class="action-btn" onclick="$('file-gallery').click()">
-              <svg class="ic ic-lg"><use href="#i-image" /></svg><span>Galeri</span>
+              <svg class="ic ic-lg"><use href="#i-image" /></svg><span data-i18n="gallery"></span>
             </button>
             <button class="action-btn" onclick="$('file-pdf').click()">
               <svg class="ic ic-lg"><use href="#i-file" /></svg><span>PDF</span>
@@ -475,17 +512,24 @@ textarea { resize: none; }
 
         <!-- ===== SETTINGS ===== -->
         <main id="view-settings" class="view">
-          <h1>Tetapan</h1>
-          <p class="subtitle">Tetapan aplikasi</p>
+          <h1 data-i18n="title_settings"></h1>
+          <p class="subtitle" data-i18n="settings_sub"></p>
 
-          <div class="section-title">Umum</div>
+          <div class="section-title" data-i18n="sec_general"></div>
           <div class="card">
             <div class="setting-row">
-              <span>Tema</span>
+              <span data-i18n="theme"></span>
               <button class="btn" id="theme-btn" onclick="toggleTheme()"></button>
             </div>
             <div class="setting-row">
-              <span>Mata wang</span>
+              <span data-i18n="language"></span>
+              <div class="seg" role="group" aria-label="Language / Bahasa">
+                <button type="button" id="lang-ms" onclick="setLang('ms')">BM</button>
+                <button type="button" id="lang-en" onclick="setLang('en')">EN</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <span data-i18n="currency"></span>
               <select id="currency-select">
                 <option>MYR</option>
                 <option>SGD</option>
@@ -496,30 +540,30 @@ textarea { resize: none; }
             </div>
           </div>
 
-          <div class="section-title">Kategori</div>
+          <div class="section-title" data-i18n="sec_category"></div>
           <div class="card">
             <div id="cat-settings-list"></div>
             <div class="cat-add">
               <div class="icon-picker" id="new-cat-picker"></div>
               <div class="cat-add-row">
-                <input type="text" id="new-cat-name" placeholder="Nama kategori baharu" maxlength="24" />
-                <button class="btn btn-primary" onclick="addCategory()">Tambah</button>
+                <input type="text" id="new-cat-name" data-i18n-placeholder="new_cat_ph" maxlength="24" />
+                <button class="btn btn-primary" onclick="addCategory()" data-i18n="add"></button>
               </div>
             </div>
           </div>
 
-          <div class="section-title">Akaun</div>
+          <div class="section-title" data-i18n="sec_account"></div>
           <div class="card" id="account-box"></div>
 
-          <div class="section-title">Data</div>
+          <div class="section-title" data-i18n="sec_data"></div>
           <div class="card">
             <div class="setting-row">
-              <span class="lead"><svg class="ic"><use href="#i-download" /></svg>Eksport CSV</span>
-              <button class="btn" onclick="exportCSV()">Muat turun</button>
+              <span class="lead"><svg class="ic"><use href="#i-download" /></svg><span data-i18n="export_csv"></span></span>
+              <button class="btn" onclick="exportCSV()" data-i18n="download"></button>
             </div>
             <div class="setting-row">
-              <span class="lead"><svg class="ic"><use href="#i-trash" /></svg>Padam semua data</span>
-              <button class="btn btn-danger" onclick="deleteAllData()">Padam</button>
+              <span class="lead"><svg class="ic"><use href="#i-trash" /></svg><span data-i18n="delete_all"></span></span>
+              <button class="btn btn-danger" onclick="deleteAllData()" data-i18n="delete"></button>
             </div>
           </div>
           <p class="muted" id="user-info" style="text-align: center; margin-top: 14px"></p>
@@ -530,55 +574,55 @@ textarea { resize: none; }
       <div class="sheet-overlay" id="sheet" onclick="if (event.target === this) closeSheet()">
         <div class="sheet">
           <div class="sheet-head">
-            <h2 id="sheet-title">Tambah resit</h2>
-            <button onclick="closeSheet()" aria-label="Tutup"><svg class="ic"><use href="#i-x" /></svg></button>
+            <h2 id="sheet-title"></h2>
+            <button onclick="closeSheet()" data-i18n-aria="close"><svg class="ic"><use href="#i-x" /></svg></button>
           </div>
 
           <div class="type-toggle">
             <button type="button" id="type-expense" onclick="setType('expense')">
-              <svg class="ic ic-sm"><use href="#i-trend-down" /></svg>Perbelanjaan
+              <svg class="ic ic-sm"><use href="#i-trend-down" /></svg><span data-i18n="expense"></span>
             </button>
             <button type="button" id="type-income" onclick="setType('income')">
-              <svg class="ic ic-sm"><use href="#i-trend-up" /></svg>Pendapatan
+              <svg class="ic ic-sm"><use href="#i-trend-up" /></svg><span data-i18n="income"></span>
             </button>
           </div>
 
           <div class="field">
-            <label for="f-merchant">Kedai / butiran</label>
-            <input type="text" id="f-merchant" placeholder="cth: Restoran Nasi Kandar" maxlength="80" />
+            <label for="f-merchant" data-i18n="merchant_label"></label>
+            <input type="text" id="f-merchant" data-i18n-placeholder="merchant_ph" maxlength="80" />
           </div>
           <div class="field-row">
             <div class="field">
-              <label for="f-amount">Jumlah</label>
+              <label for="f-amount" data-i18n="amount_label"></label>
               <input type="number" id="f-amount" inputmode="decimal" step="0.01" min="0" placeholder="0.00" />
             </div>
             <div class="field">
-              <label for="f-date">Tarikh</label>
+              <label for="f-date" data-i18n="date_label"></label>
               <input type="date" id="f-date" />
             </div>
           </div>
           <div class="field">
-            <label for="f-category">Kategori</label>
+            <label for="f-category" data-i18n="category_label"></label>
             <select id="f-category"></select>
           </div>
           <div class="field">
-            <label for="f-notes">Nota (pilihan)</label>
+            <label for="f-notes" data-i18n="notes_label"></label>
             <textarea id="f-notes" rows="2" maxlength="300"></textarea>
           </div>
 
           <div class="image-box">
             <div id="image-preview"></div>
             <div class="img-actions">
-              <button type="button" class="btn" onclick="$('file-camera').click()"><svg class="ic ic-sm"><use href="#i-camera" /></svg>Kamera</button>
-              <button type="button" class="btn" onclick="$('file-gallery').click()"><svg class="ic ic-sm"><use href="#i-image" /></svg>Galeri</button>
+              <button type="button" class="btn" onclick="$('file-camera').click()"><svg class="ic ic-sm"><use href="#i-camera" /></svg><span data-i18n="camera"></span></button>
+              <button type="button" class="btn" onclick="$('file-gallery').click()"><svg class="ic ic-sm"><use href="#i-image" /></svg><span data-i18n="gallery"></span></button>
               <button type="button" class="btn" onclick="$('file-pdf').click()"><svg class="ic ic-sm"><use href="#i-file" /></svg>PDF</button>
-              <button type="button" class="btn btn-danger" id="remove-image-btn" onclick="removeImage()"><svg class="ic ic-sm"><use href="#i-trash" /></svg>Buang</button>
+              <button type="button" class="btn btn-danger" id="remove-image-btn" onclick="removeImage()"><svg class="ic ic-sm"><use href="#i-trash" /></svg><span data-i18n="remove"></span></button>
             </div>
           </div>
 
           <div class="sheet-actions">
-            <button class="btn btn-primary btn-block" id="save-btn" onclick="saveReceipt()">Simpan</button>
-            <button class="btn btn-danger btn-block" id="delete-btn" onclick="deleteReceipt()">Padam resit ini</button>
+            <button class="btn btn-primary btn-block" id="save-btn" onclick="saveReceipt()" data-i18n="save"></button>
+            <button class="btn btn-danger btn-block" id="delete-btn" onclick="deleteReceipt()" data-i18n="delete_receipt"></button>
           </div>
         </div>
       </div>
@@ -588,19 +632,19 @@ textarea { resize: none; }
       <!-- ===== BOTTOM NAV ===== -->
       <nav class="bottom-nav" id="main-nav">
         <button class="nav-item" data-view="history" onclick="switchView('history')">
-          <svg class="ic"><use href="#i-list" /></svg><span>Sejarah</span>
+          <svg class="ic"><use href="#i-list" /></svg><span data-i18n="title_history"></span>
         </button>
         <button class="nav-item" data-view="dashboard" onclick="switchView('dashboard')">
-          <svg class="ic"><use href="#i-chart" /></svg><span>Ringkasan</span>
+          <svg class="ic"><use href="#i-chart" /></svg><span data-i18n="title_dashboard"></span>
         </button>
-        <button class="nav-item" data-view="upload" onclick="triggerScan()" aria-label="Imbas resit">
+        <button class="nav-item" data-view="upload" onclick="triggerScan()" data-i18n-aria="scan_title">
           <div class="scan-icon-wrapper"><svg class="ic ic-lg"><use href="#i-camera" /></svg></div>
         </button>
         <button class="nav-item" onclick="openSheet()">
-          <svg class="ic"><use href="#i-plus" /></svg><span>Tambah</span>
+          <svg class="ic"><use href="#i-plus" /></svg><span data-i18n="add"></span>
         </button>
         <button class="nav-item" data-view="settings" onclick="switchView('settings')">
-          <svg class="ic"><use href="#i-sliders" /></svg><span>Tetapan</span>
+          <svg class="ic"><use href="#i-sliders" /></svg><span data-i18n="title_settings"></span>
         </button>
       </nav>
     </div>

@@ -1,4 +1,251 @@
 // ==========================================
+// 0. BAHASA (BM / EN)
+// ==========================================
+const I18N = {
+  ms: {
+    title_history: 'Sejarah',
+    search_ph: 'Cari kedai atau nota',
+    filter_all: 'Semua',
+    receipts_count: '{n} resit',
+    empty_none: 'Belum ada resit. Tekan Tambah atau butang kamera untuk bermula.',
+    empty_nomatch: 'Tiada padanan.',
+    title_dashboard: 'Ringkasan',
+    dash_sub: 'Kosongkan bulan untuk lihat semua data',
+    net_balance: 'Baki bersih',
+    income: 'Pendapatan',
+    expense: 'Perbelanjaan',
+    by_category: 'Perbelanjaan mengikut kategori',
+    no_expense: 'Tiada perbelanjaan untuk tempoh ini.',
+    add_receipt: 'Tambah resit',
+    scan_info_sub: 'Imbas dengan kamera, pilih dari galeri, atau taip manual',
+    scan_title: 'Imbas resit',
+    scan_sub: 'Ambil gambar resit dengan kamera',
+    manual: 'Manual',
+    gallery: 'Galeri',
+    title_settings: 'Tetapan',
+    settings_sub: 'Tetapan aplikasi',
+    sec_general: 'Umum',
+    theme: 'Tema',
+    theme_to_light: 'Mod cerah',
+    theme_to_dark: 'Mod gelap',
+    language: 'Bahasa',
+    currency: 'Mata wang',
+    sec_category: 'Kategori',
+    new_cat_ph: 'Nama kategori baharu',
+    add: 'Tambah',
+    sec_account: 'Akaun',
+    sec_data: 'Data',
+    export_csv: 'Eksport CSV',
+    download: 'Muat turun',
+    delete_all: 'Padam semua data',
+    delete: 'Padam',
+    user_id: 'ID pengguna: {id}',
+    default_tag: 'Lalai',
+    delete_cat_aria: 'Padam kategori',
+    icon_aria: 'Ikon {n}',
+    sheet_add: 'Tambah resit',
+    sheet_edit: 'Edit resit',
+    close: 'Tutup',
+    merchant_label: 'Kedai / butiran',
+    merchant_ph: 'cth: Restoran Nasi Kandar',
+    amount_label: 'Jumlah',
+    date_label: 'Tarikh',
+    category_label: 'Kategori',
+    notes_label: 'Nota (pilihan)',
+    camera: 'Kamera',
+    remove: 'Buang',
+    save: 'Simpan',
+    saving: 'Menyimpan...',
+    delete_receipt: 'Padam resit ini',
+    no_attachment: 'Tiada lampiran. Tambah gambar resit (pilihan).',
+    open_pdf: 'Buka PDF',
+    receipt_alt: 'Resit',
+    file_too_big: 'Fail terlalu besar (maks 10MB).',
+    ai_reading: 'AI sedang membaca resit...',
+    ai_done: 'Siap. Sila semak butiran sebelum simpan.',
+    ai_failed: 'AI gagal: {msg}',
+    need_merchant: 'Sila isi nama kedai / butiran.',
+    need_amount: 'Sila isi jumlah yang sah.',
+    need_date: 'Sila pilih tarikh.',
+    not_logged_in: 'Belum log masuk. Cuba sebentar lagi.',
+    no_session: 'Belum log masuk (sesi belum sedia). Refresh app.',
+    saved: 'Resit disimpan.',
+    updated: 'Resit dikemas kini.',
+    save_failed: 'Gagal simpan: {msg}',
+    upload_failed: 'Muat naik gambar gagal: {msg}',
+    save_data_failed: 'Simpan data gagal: {msg}',
+    confirm_delete_receipt: 'Padam resit ini? Tindakan ini tidak boleh dibatalkan.',
+    deleted: 'Resit dipadam.',
+    delete_failed: 'Gagal padam: {msg}',
+    need_cat_name: 'Sila isi nama kategori.',
+    cat_exists: 'Kategori itu sudah wujud.',
+    cat_added: 'Kategori ditambah.',
+    confirm_del_cat_used: 'Kategori "{name}" digunakan oleh {used} resit (resit tidak akan dipadam). Teruskan?',
+    confirm_del_cat: 'Padam kategori "{name}"?',
+    no_export: 'Tiada data untuk dieksport.',
+    no_delete: 'Tiada data untuk dipadam.',
+    confirm_delete_all: 'Padam SEMUA {n} resit dan gambar? Tidak boleh dibatalkan.',
+    confirm_sure: 'Anda pasti? Sila sahkan sekali lagi.',
+    all_deleted: 'Semua data dipadam.',
+    db_error: 'Ralat sambungan pangkalan data: {msg}',
+    fetch_failed: 'Gagal tarik data: {msg}',
+    csv_date: 'Tarikh',
+    csv_store: 'Kedai',
+    csv_type: 'Jenis',
+    csv_category: 'Kategori',
+    csv_amount: 'Jumlah',
+    csv_notes: 'Nota',
+    csv_image: 'Pautan Gambar',
+    acc_status: 'Status',
+    acc_guest: 'Tetamu (data pada peranti ini sahaja)',
+    acc_pending: 'Menunggu pengesahan untuk <b>{email}</b>. Semak e-mel anda dan klik pautan.',
+    email_ph: 'E-mel anda',
+    link_btn: 'Simpan akaun (kekalkan data)',
+    send_link_btn: 'Dah ada akaun? Hantar pautan log masuk',
+    no_pwd_note: 'Tiada kata laluan diperlukan. Kami hantar pautan ke e-mel anda.',
+    signed_in_as: 'Log masuk sebagai',
+    logout: 'Log keluar',
+    invalid_email: 'Sila isi e-mel yang sah.',
+    email_exists: 'E-mel itu sudah berdaftar. Guna "Hantar pautan log masuk".',
+    failed: 'Gagal: {msg}',
+    confirm_diff_account: 'Data tetamu pada peranti ini TIDAK akan dipindahkan ke akaun yang anda log masuk. Teruskan?',
+    account_not_found: 'Akaun dengan e-mel itu tidak dijumpai.',
+    confirm_sent: 'Pautan pengesahan dihantar. Semak e-mel anda.',
+    login_sent: 'Pautan log masuk dihantar. Semak e-mel anda.',
+    confirm_logout: 'Log keluar? Anda boleh log masuk semula dengan e-mel yang sama.',
+    login_ok: 'Log masuk berjaya.',
+    email_verified: 'E-mel disahkan. Akaun anda kini kekal.',
+  },
+  en: {
+    title_history: 'History',
+    search_ph: 'Search store or notes',
+    filter_all: 'All',
+    receipts_count: '{n} receipt(s)',
+    empty_none: 'No receipts yet. Tap Add or the camera button to get started.',
+    empty_nomatch: 'No matches.',
+    title_dashboard: 'Summary',
+    dash_sub: 'Clear the month to see all data',
+    net_balance: 'Net balance',
+    income: 'Income',
+    expense: 'Expense',
+    by_category: 'Expenses by category',
+    no_expense: 'No expenses for this period.',
+    add_receipt: 'Add receipt',
+    scan_info_sub: 'Scan with the camera, pick from gallery, or enter manually',
+    scan_title: 'Scan receipt',
+    scan_sub: 'Take a photo of your receipt',
+    manual: 'Manual',
+    gallery: 'Gallery',
+    title_settings: 'Settings',
+    settings_sub: 'App settings',
+    sec_general: 'General',
+    theme: 'Theme',
+    theme_to_light: 'Light mode',
+    theme_to_dark: 'Dark mode',
+    language: 'Language',
+    currency: 'Currency',
+    sec_category: 'Categories',
+    new_cat_ph: 'New category name',
+    add: 'Add',
+    sec_account: 'Account',
+    sec_data: 'Data',
+    export_csv: 'Export CSV',
+    download: 'Download',
+    delete_all: 'Delete all data',
+    delete: 'Delete',
+    user_id: 'User ID: {id}',
+    default_tag: 'Default',
+    delete_cat_aria: 'Delete category',
+    icon_aria: 'Icon {n}',
+    sheet_add: 'Add receipt',
+    sheet_edit: 'Edit receipt',
+    close: 'Close',
+    merchant_label: 'Store / description',
+    merchant_ph: 'e.g. Nasi Kandar Restaurant',
+    amount_label: 'Amount',
+    date_label: 'Date',
+    category_label: 'Category',
+    notes_label: 'Notes (optional)',
+    camera: 'Camera',
+    remove: 'Remove',
+    save: 'Save',
+    saving: 'Saving...',
+    delete_receipt: 'Delete this receipt',
+    no_attachment: 'No attachment. Add a receipt image (optional).',
+    open_pdf: 'Open PDF',
+    receipt_alt: 'Receipt',
+    file_too_big: 'File is too large (max 10MB).',
+    ai_reading: 'AI is reading the receipt...',
+    ai_done: 'Done. Please review the details before saving.',
+    ai_failed: 'AI failed: {msg}',
+    need_merchant: 'Please enter the store / description.',
+    need_amount: 'Please enter a valid amount.',
+    need_date: 'Please choose a date.',
+    not_logged_in: 'Not signed in yet. Try again shortly.',
+    no_session: 'Not signed in yet (session not ready). Refresh the app.',
+    saved: 'Receipt saved.',
+    updated: 'Receipt updated.',
+    save_failed: 'Failed to save: {msg}',
+    upload_failed: 'Image upload failed: {msg}',
+    save_data_failed: 'Saving data failed: {msg}',
+    confirm_delete_receipt: 'Delete this receipt? This cannot be undone.',
+    deleted: 'Receipt deleted.',
+    delete_failed: 'Failed to delete: {msg}',
+    need_cat_name: 'Please enter a category name.',
+    cat_exists: 'That category already exists.',
+    cat_added: 'Category added.',
+    confirm_del_cat_used: 'Category "{name}" is used by {used} receipt(s) (receipts will not be deleted). Continue?',
+    confirm_del_cat: 'Delete category "{name}"?',
+    no_export: 'No data to export.',
+    no_delete: 'No data to delete.',
+    confirm_delete_all: 'Delete ALL {n} receipts and images? This cannot be undone.',
+    confirm_sure: 'Are you sure? Please confirm once more.',
+    all_deleted: 'All data deleted.',
+    db_error: 'Database connection error: {msg}',
+    fetch_failed: 'Failed to load data: {msg}',
+    csv_date: 'Date',
+    csv_store: 'Store',
+    csv_type: 'Type',
+    csv_category: 'Category',
+    csv_amount: 'Amount',
+    csv_notes: 'Notes',
+    csv_image: 'Image Link',
+    acc_status: 'Status',
+    acc_guest: 'Guest (data on this device only)',
+    acc_pending: 'Waiting for confirmation of <b>{email}</b>. Check your email and click the link.',
+    email_ph: 'Your email',
+    link_btn: 'Save account (keep data)',
+    send_link_btn: 'Already have an account? Send login link',
+    no_pwd_note: 'No password needed. We will send a link to your email.',
+    signed_in_as: 'Signed in as',
+    logout: 'Sign out',
+    invalid_email: 'Please enter a valid email.',
+    email_exists: 'That email is already registered. Use "Send login link".',
+    failed: 'Failed: {msg}',
+    confirm_diff_account: 'Guest data on this device will NOT be moved to the account you sign in to. Continue?',
+    account_not_found: 'No account found with that email.',
+    confirm_sent: 'Confirmation link sent. Check your email.',
+    login_sent: 'Login link sent. Check your email.',
+    confirm_logout: 'Sign out? You can sign back in with the same email.',
+    login_ok: 'Signed in successfully.',
+    email_verified: 'Email verified. Your account is now permanent.',
+  },
+};
+
+// Nama kategori lalai disimpan dalam DB dalam bentuk asal; hanya paparan diterjemah
+const CAT_LABELS = {
+  Gaji: { ms: 'Gaji', en: 'Salary' },
+  'Lain-lain': { ms: 'Lain-lain', en: 'Others' },
+};
+
+let currentLang = localStorage.getItem('lang') === 'en' ? 'en' : 'ms';
+
+const t = (key, params = {}) =>
+  (I18N[currentLang][key] ?? I18N.ms[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => params[k] ?? '');
+
+const catLabel = (name) => CAT_LABELS[name]?.[currentLang] || name;
+
+// ==========================================
 // 1. SUPABASE & STATE
 // ==========================================
 const SUPABASE_URL = 'https://pbxyagcrbojmxtshdute.supabase.co';
@@ -69,18 +316,18 @@ function todayStr() {
 }
 
 function formatDate(str) {
-  return new Date(str + 'T00:00:00').toLocaleDateString('en-GB', {
+  return new Date(str + 'T00:00:00').toLocaleDateString(currentLang === 'ms' ? 'ms-MY' : 'en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
 
 let toastTimer;
 function toast(msg) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
 const allCats = () => [...DEFAULT_CATS, ...customCats];
@@ -93,6 +340,10 @@ const catIcon = (name) => {
 // ==========================================
 // 2. AUTH (guna semula sesi sedia ada!)
 // ==========================================
+function renderUserInfo() {
+  $('user-info').textContent = currentUser ? t('user_id', { id: currentUser.id.slice(0, 8) + '…' }) : '';
+}
+
 async function initAuth() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -103,17 +354,17 @@ async function initAuth() {
       if (error) throw error;
       currentUser = data.user;
     }
-    $('user-info').textContent = `ID pengguna: ${currentUser.id.slice(0, 8)}…`;
+    renderUserInfo();
     renderAccount();
     await fetchReceipts();
   } catch (err) {
     console.error('Gagal log masuk:', err);
-    toast('Ralat sambungan pangkalan data: ' + err.message);
+    toast(t('db_error', { msg: err.message }));
   }
 }
 
 // ==========================================
-// 3. TEMA & NAVIGASI
+// 3. TEMA, BAHASA & NAVIGASI
 // ==========================================
 const htmlTag = document.documentElement;
 
@@ -121,11 +372,47 @@ function applyTheme(theme) {
   htmlTag.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
   $('theme-btn').innerHTML =
-    theme === 'dark' ? `${ico('sun', 'ic-sm')}Mod cerah` : `${ico('moon', 'ic-sm')}Mod gelap`;
+    theme === 'dark'
+      ? `${ico('sun', 'ic-sm')}${esc(t('theme_to_light'))}`
+      : `${ico('moon', 'ic-sm')}${esc(t('theme_to_dark'))}`;
 }
 function toggleTheme() {
   applyTheme(htmlTag.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 }
+
+// Terapkan bahasa pada semua teks statik dan render semula bahagian dinamik
+function applyLang(lang) {
+  currentLang = lang === 'en' ? 'en' : 'ms';
+  localStorage.setItem('lang', currentLang);
+  htmlTag.lang = currentLang === 'ms' ? 'ms' : 'en';
+
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  ['ms', 'en'].forEach((l) => {
+    const b = $(`lang-${l}`);
+    b.classList.toggle('active', l === currentLang);
+    b.setAttribute('aria-pressed', String(l === currentLang));
+  });
+
+  applyTheme(htmlTag.getAttribute('data-theme') || 'light');
+  $('sheet-title').textContent = editingId ? t('sheet_edit') : t('sheet_add');
+  fillCategorySelects($('f-category').value);
+  renderImagePreview();
+  renderHistory();
+  renderDashboard();
+  renderCategorySettings();
+  renderIconPicker();
+  renderAccount();
+  renderUserInfo();
+}
+const setLang = applyLang;
 
 function switchView(viewName) {
   document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
@@ -160,7 +447,7 @@ async function fetchReceipts() {
 
   if (error) {
     console.error('Gagal tarik data:', error);
-    toast('Gagal tarik data: ' + error.message);
+    toast(t('fetch_failed', { msg: error.message }));
     return;
   }
   receipts = data || [];
@@ -174,7 +461,7 @@ async function fetchReceipts() {
 function fillCategorySelects(selected) {
   // <option> hanya boleh teks, jadi ikon dipaparkan di senarai & ringkasan sahaja
   const opts = allCats()
-    .map((c) => `<option value="${esc(c.name)}">${esc(c.name)}</option>`)
+    .map((c) => `<option value="${esc(c.name)}">${esc(catLabel(c.name))}</option>`)
     .join('');
   const f = $('f-category');
   f.innerHTML = opts;
@@ -187,7 +474,7 @@ function fillCategorySelects(selected) {
 
   const filter = $('filter-cat');
   const prev = filter.value;
-  filter.innerHTML = `<option value="">Semua</option>` + opts;
+  filter.innerHTML = `<option value="">${esc(t('filter_all'))}</option>` + opts;
   filter.value = prev;
 }
 
@@ -203,7 +490,7 @@ function openSheet(id = null, file = null) {
   removeImageFlag = false;
   const r = id ? receipts.find((x) => x.id === id) : null;
 
-  $('sheet-title').textContent = r ? 'Edit resit' : 'Tambah resit';
+  $('sheet-title').textContent = r ? t('sheet_edit') : t('sheet_add');
   $('delete-btn').style.display = r ? 'block' : 'none';
   setType(r?.type || 'expense');
   $('f-merchant').value = r?.merchant_name || '';
@@ -256,16 +543,16 @@ function renderImagePreview() {
       html = `<div class="pdf-badge">${ico('file')}<span>${esc(pendingFile.name)}</span></div>`;
     } else {
       previewObjectUrl = URL.createObjectURL(pendingFile);
-      html = `<img src="${previewObjectUrl}" alt="Resit" />`;
+      html = `<img src="${previewObjectUrl}" alt="${esc(t('receipt_alt'))}" />`;
     }
   } else if (r?.image_url && !removeImageFlag) {
     hasImage = true;
     const isPdf = /\.pdf($|\?)/i.test(r.image_url);
     html = isPdf
-      ? `<div class="pdf-badge">${ico('file')}<a href="${esc(r.image_url)}" target="_blank" rel="noopener" style="color:var(--primary)">Buka PDF</a></div>`
-      : `<a href="${esc(r.image_url)}" target="_blank" rel="noopener"><img src="${esc(r.image_url)}" alt="Resit" /></a>`;
+      ? `<div class="pdf-badge">${ico('file')}<a href="${esc(r.image_url)}" target="_blank" rel="noopener" style="color:var(--primary)">${esc(t('open_pdf'))}</a></div>`
+      : `<a href="${esc(r.image_url)}" target="_blank" rel="noopener"><img src="${esc(r.image_url)}" alt="${esc(t('receipt_alt'))}" /></a>`;
   } else {
-    html = `<p class="muted" style="margin-bottom:10px">Tiada lampiran. Tambah gambar resit (pilihan).</p>`;
+    html = `<p class="muted" style="margin-bottom:10px">${esc(t('no_attachment'))}</p>`;
   }
 
   box.innerHTML = html;
@@ -276,13 +563,13 @@ function renderImagePreview() {
 async function handleFile(file) {
   if (!file) return;
   if (file.size > 10 * 1024 * 1024) {
-    toast('Fail terlalu besar (maks 10MB).');
+    toast(t('file_too_big'));
     return;
   }
   if (!$('sheet').classList.contains('open')) openSheet(null, file);
   else setPendingFile(file);
 
-  toast('AI sedang membaca resit...');
+  toast(t('ai_reading'));
   try {
     const ai = await extractReceiptData(file);
     // pastikan borang masih terbuka dan fail yang sama
@@ -292,10 +579,10 @@ async function handleFile(file) {
     if (ai.total_amount != null) $('f-amount').value = ai.total_amount;
     if (ai.receipt_date) $('f-date').value = ai.receipt_date;
     if (ai.category && allCats().some((c) => c.name === ai.category)) $('f-category').value = ai.category;
-    toast('Siap. Sila semak butiran sebelum simpan.');
+    toast(t('ai_done'));
   } catch (e) {
     console.warn('AI gagal baca resit:', e);
-    toast('AI gagal: ' + e.message);
+    toast(t('ai_failed', { msg: e.message }));
   }
 }
 
@@ -325,7 +612,7 @@ async function prepareForAI(file) {
 
 // Panggil Supabase Edge Function 'scan-receipt' (Gemini)
 async function extractReceiptData(file) {
-  if (!currentUser) throw new Error('Belum log masuk (sesi belum sedia). Refresh app.');
+  if (!currentUser) throw new Error(t('no_session'));
   const payload = await prepareForAI(file);
   const { data, error } = await supabaseClient.functions.invoke('scan-receipt', {
     body: { ...payload, categories: allCats().map((c) => c.name) },
@@ -346,14 +633,14 @@ async function saveReceipt() {
   const amount = parseFloat($('f-amount').value);
   const date = $('f-date').value;
 
-  if (!merchant) return toast('Sila isi nama kedai / butiran.');
-  if (isNaN(amount) || amount < 0) return toast('Sila isi jumlah yang sah.');
-  if (!date) return toast('Sila pilih tarikh.');
-  if (!currentUser) return toast('Belum log masuk. Cuba sebentar lagi.');
+  if (!merchant) return toast(t('need_merchant'));
+  if (isNaN(amount) || amount < 0) return toast(t('need_amount'));
+  if (!date) return toast(t('need_date'));
+  if (!currentUser) return toast(t('not_logged_in'));
 
   const btn = $('save-btn');
   btn.disabled = true;
-  btn.textContent = 'Menyimpan...';
+  btn.textContent = t('saving');
 
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -369,7 +656,7 @@ async function saveReceipt() {
       const { error: upErr } = await supabaseClient.storage
         .from(BUCKET)
         .upload(path, pendingFile, { contentType: pendingFile.type });
-      if (upErr) throw new Error('Muat naik gambar gagal: ' + upErr.message);
+      if (upErr) throw new Error(t('upload_failed', { msg: upErr.message }));
       pathToDelete = old?.image_path || null;
       image_path = path;
       image_url = supabaseClient.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
@@ -393,37 +680,37 @@ async function saveReceipt() {
     const { error } = editingId
       ? await supabaseClient.from('receipts').update(payload).eq('id', editingId)
       : await supabaseClient.from('receipts').insert([{ ...payload, user_id: uid }]);
-    if (error) throw new Error('Simpan data gagal: ' + error.message);
+    if (error) throw new Error(t('save_data_failed', { msg: error.message }));
 
     if (pathToDelete) await supabaseClient.storage.from(BUCKET).remove([pathToDelete]);
 
     const wasEdit = !!editingId;
     closeSheet();
-    toast(wasEdit ? 'Resit dikemas kini.' : 'Resit disimpan.');
+    toast(wasEdit ? t('updated') : t('saved'));
     await fetchReceipts();
     if ($('view-upload').classList.contains('active')) switchView('history');
   } catch (err) {
     console.error(err);
-    toast('Gagal simpan: ' + err.message);
+    toast(t('save_failed', { msg: err.message }));
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Simpan';
+    btn.textContent = t('save');
   }
 }
 
 async function deleteReceipt() {
   if (!editingId) return;
-  if (!confirm('Padam resit ini? Tindakan ini tidak boleh dibatalkan.')) return;
+  if (!confirm(t('confirm_delete_receipt'))) return;
   const r = receipts.find((x) => x.id === editingId);
   try {
     const { error } = await supabaseClient.from('receipts').delete().eq('id', editingId);
     if (error) throw error;
     if (r?.image_path) await supabaseClient.storage.from(BUCKET).remove([r.image_path]);
     closeSheet();
-    toast('Resit dipadam.');
+    toast(t('deleted'));
     await fetchReceipts();
   } catch (err) {
-    toast('Gagal padam: ' + err.message);
+    toast(t('delete_failed', { msg: err.message }));
   }
 }
 
@@ -436,16 +723,17 @@ function renderHistory() {
   const list = receipts.filter(
     (r) =>
       (!cat || r.category === cat) &&
-      (!q || [r.merchant_name, r.notes, r.category].some((v) => (v || '').toLowerCase().includes(q)))
+      (!q ||
+        [r.merchant_name, r.notes, r.category, catLabel(r.category)].some((v) =>
+          (v || '').toLowerCase().includes(q)
+        ))
   );
 
-  $('history-count').textContent = `${list.length} resit`;
+  $('history-count').textContent = t('receipts_count', { n: list.length });
   const box = $('receipt-list');
 
   if (list.length === 0) {
-    box.innerHTML = `<p class="empty-msg">${
-      receipts.length ? 'Tiada padanan.' : 'Belum ada resit. Tekan Tambah atau butang kamera untuk bermula.'
-    }</p>`;
+    box.innerHTML = `<p class="empty-msg">${esc(receipts.length ? t('empty_nomatch') : t('empty_none'))}</p>`;
     return;
   }
 
@@ -493,11 +781,11 @@ function renderDashboard() {
     ? rows
         .map(([name, amt]) => `
         <div class="bar-row">
-          <div class="bar-label"><span class="name">${ico(catIcon(name), 'ic-sm')}${esc(name)}</span><span class="amt">${money(amt)}</span></div>
+          <div class="bar-label"><span class="name">${ico(catIcon(name), 'ic-sm')}${esc(catLabel(name))}</span><span class="amt">${money(amt)}</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:${expense ? (amt / expense) * 100 : 0}%"></div></div>
         </div>`)
         .join('')
-    : `<p class="empty-msg">Tiada perbelanjaan untuk tempoh ini.</p>`;
+    : `<p class="empty-msg">${esc(t('no_expense'))}</p>`;
 }
 
 // ==========================================
@@ -505,14 +793,14 @@ function renderDashboard() {
 // ==========================================
 function renderCategorySettings() {
   const defaults = DEFAULT_CATS.map(
-    (c) => `<div class="setting-row"><span class="lead">${ico(catIcon(c.name))}${esc(c.name)}</span><span class="muted">Lalai</span></div>`
+    (c) => `<div class="setting-row"><span class="lead">${ico(catIcon(c.name))}${esc(catLabel(c.name))}</span><span class="muted">${esc(t('default_tag'))}</span></div>`
   ).join('');
   const custom = customCats
     .map(
       (c, i) => `
       <div class="setting-row">
         <span class="lead">${ico(catIcon(c.name))}${esc(c.name)}</span>
-        <button class="del" onclick="deleteCategory(${i})" aria-label="Padam kategori">${ico('trash', 'ic-sm')}</button>
+        <button class="del" onclick="deleteCategory(${i})" aria-label="${esc(t('delete_cat_aria'))}">${ico('trash', 'ic-sm')}</button>
       </div>`
     )
     .join('');
@@ -521,23 +809,23 @@ function renderCategorySettings() {
 
 function renderIconPicker() {
   $('new-cat-picker').innerHTML = CAT_ICONS.map(
-    (n) => `<button type="button" class="icon-opt${n === newCatIcon ? ' active' : ''}" data-icon="${n}" aria-label="Ikon ${n}" aria-pressed="${n === newCatIcon}">${ico(n)}</button>`
+    (n) => `<button type="button" class="icon-opt${n === newCatIcon ? ' active' : ''}" data-icon="${n}" aria-label="${esc(t('icon_aria', { n }))}" aria-pressed="${n === newCatIcon}">${ico(n)}</button>`
   ).join('');
 }
 
 function addCategory() {
   const name = $('new-cat-name').value.trim();
-  if (!name) return toast('Sila isi nama kategori.');
-  if (allCats().some((c) => c.name.toLowerCase() === name.toLowerCase()))
-    return toast('Kategori itu sudah wujud.');
+  if (!name) return toast(t('need_cat_name'));
+  if (allCats().some((c) => c.name.toLowerCase() === name.toLowerCase() || catLabel(c.name).toLowerCase() === name.toLowerCase()))
+    return toast(t('cat_exists'));
   customCats.push({ name, icon: newCatIcon });
   localStorage.setItem('customCats', JSON.stringify(customCats));
   $('new-cat-name').value = '';
   newCatIcon = 'tag';
   renderIconPicker();
-  fillCategorySelects();
+  fillCategorySelects($('f-category').value);
   renderCategorySettings();
-  toast('Kategori ditambah.');
+  toast(t('cat_added'));
 }
 
 function deleteCategory(index) {
@@ -545,20 +833,23 @@ function deleteCategory(index) {
   if (!c) return;
   const used = receipts.filter((r) => r.category === c.name).length;
   const msg = used
-    ? `Kategori "${c.name}" digunakan oleh ${used} resit (resit tidak akan dipadam). Teruskan?`
-    : `Padam kategori "${c.name}"?`;
+    ? t('confirm_del_cat_used', { name: c.name, used })
+    : t('confirm_del_cat', { name: c.name });
   if (!confirm(msg)) return;
   customCats.splice(index, 1);
   localStorage.setItem('customCats', JSON.stringify(customCats));
-  fillCategorySelects();
+  fillCategorySelects($('f-category').value);
   renderCategorySettings();
   renderHistory();
 }
 
 function exportCSV() {
-  if (!receipts.length) return toast('Tiada data untuk dieksport.');
+  if (!receipts.length) return toast(t('no_export'));
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const header = ['Tarikh', 'Kedai', 'Jenis', 'Kategori', 'Jumlah', 'Nota', 'Pautan Gambar'];
+  const header = [
+    t('csv_date'), t('csv_store'), t('csv_type'), t('csv_category'),
+    t('csv_amount'), t('csv_notes'), t('csv_image'),
+  ];
   const rows = receipts.map((r) =>
     [r.receipt_date, r.merchant_name, r.type || 'expense', r.category, r.total_amount, r.notes, r.image_url]
       .map(cell)
@@ -575,18 +866,18 @@ function exportCSV() {
 }
 
 async function deleteAllData() {
-  if (!receipts.length) return toast('Tiada data untuk dipadam.');
-  if (!confirm(`Padam SEMUA ${receipts.length} resit dan gambar? Tidak boleh dibatalkan.`)) return;
-  if (!confirm('Anda pasti? Sila sahkan sekali lagi.')) return;
+  if (!receipts.length) return toast(t('no_delete'));
+  if (!confirm(t('confirm_delete_all', { n: receipts.length }))) return;
+  if (!confirm(t('confirm_sure'))) return;
   try {
     const paths = receipts.map((r) => r.image_path).filter(Boolean);
     if (paths.length) await supabaseClient.storage.from(BUCKET).remove(paths);
     const { error } = await supabaseClient.from('receipts').delete().eq('user_id', currentUser.id);
     if (error) throw error;
-    toast('Semua data dipadam.');
+    toast(t('all_deleted'));
     await fetchReceipts();
   } catch (err) {
-    toast('Gagal padam: ' + err.message);
+    toast(t('delete_failed', { msg: err.message }));
   }
 }
 
@@ -600,29 +891,33 @@ function renderAccount() {
   const box = $('account-box');
   if (!box || !currentUser) return;
 
+  // Kekalkan e-mel yang sedang ditaip bila bahasa ditukar
+  const typed = $('acc-email')?.value || '';
+
   if (currentUser.is_anonymous) {
     const pending = currentUser.new_email
-      ? `<p class="acc-note">${ico('clock', 'ic-sm')}<span>Menunggu pengesahan untuk <b>${esc(currentUser.new_email)}</b>. Semak e-mel anda dan klik pautan.</span></p>`
+      ? `<p class="acc-note">${ico('clock', 'ic-sm')}<span>${t('acc_pending', { email: esc(currentUser.new_email) })}</span></p>`
       : '';
     box.innerHTML = `
       <div class="setting-row">
-        <span class="lead">${ico('user')}Status</span><span class="muted">Tetamu (data pada peranti ini sahaja)</span>
+        <span class="lead">${ico('user')}${esc(t('acc_status'))}</span><span class="muted">${esc(t('acc_guest'))}</span>
       </div>
       ${pending}
       <div class="acc-form">
-        <input type="email" id="acc-email" placeholder="E-mel anda" autocomplete="email" />
-        <button class="btn btn-primary" onclick="linkAccount()">Simpan akaun (kekalkan data)</button>
-        <button class="btn" onclick="sendLoginLink()">Dah ada akaun? Hantar pautan log masuk</button>
+        <input type="email" id="acc-email" placeholder="${esc(t('email_ph'))}" autocomplete="email" />
+        <button class="btn btn-primary" onclick="linkAccount()">${esc(t('link_btn'))}</button>
+        <button class="btn" onclick="sendLoginLink()">${esc(t('send_link_btn'))}</button>
       </div>
-      <p class="acc-note">Tiada kata laluan diperlukan. Kami hantar pautan ke e-mel anda.</p>`;
+      <p class="acc-note">${esc(t('no_pwd_note'))}</p>`;
+    if (typed) $('acc-email').value = typed;
   } else {
     box.innerHTML = `
       <div class="setting-row">
-        <span class="lead">${ico('user')}Log masuk sebagai</span><span class="muted">${esc(currentUser.email || '')}</span>
+        <span class="lead">${ico('user')}${esc(t('signed_in_as'))}</span><span class="muted">${esc(currentUser.email || '')}</span>
       </div>
       <div class="setting-row">
-        <span class="lead">${ico('logout')}Log keluar</span>
-        <button class="btn btn-danger" onclick="signOutAccount()">Log keluar</button>
+        <span class="lead">${ico('logout')}${esc(t('logout'))}</span>
+        <button class="btn btn-danger" onclick="signOutAccount()">${esc(t('logout'))}</button>
       </div>`;
   }
 }
@@ -630,40 +925,36 @@ function renderAccount() {
 // Tukar akaun tetamu kepada akaun e-mel (data sedia ada KEKAL)
 async function linkAccount() {
   const email = $('acc-email').value.trim();
-  if (!isValidEmail(email)) return toast('Sila isi e-mel yang sah.');
+  if (!isValidEmail(email)) return toast(t('invalid_email'));
   const { error } = await supabaseClient.auth.updateUser({ email }, { emailRedirectTo: REDIRECT_URL });
   if (error) {
     const exists = /already|registered|exists/i.test(error.message);
-    return toast(exists ? 'E-mel itu sudah berdaftar. Guna "Hantar pautan log masuk".' : 'Gagal: ' + error.message);
+    return toast(exists ? t('email_exists') : t('failed', { msg: error.message }));
   }
   const { data } = await supabaseClient.auth.getUser();
   if (data?.user) currentUser = data.user;
   renderAccount();
-  toast('Pautan pengesahan dihantar. Semak e-mel anda.');
+  toast(t('confirm_sent'));
 }
 
 // Untuk peranti baharu: log masuk ke akaun sedia ada
 async function sendLoginLink() {
   const email = $('acc-email').value.trim();
-  if (!isValidEmail(email)) return toast('Sila isi e-mel yang sah.');
-  if (
-    receipts.length &&
-    !confirm('Data tetamu pada peranti ini TIDAK akan dipindahkan ke akaun yang anda log masuk. Teruskan?')
-  )
-    return;
+  if (!isValidEmail(email)) return toast(t('invalid_email'));
+  if (receipts.length && !confirm(t('confirm_diff_account'))) return;
   const { error } = await supabaseClient.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: REDIRECT_URL, shouldCreateUser: false },
   });
   if (error) {
     const notFound = /signups not allowed|not found/i.test(error.message);
-    return toast(notFound ? 'Akaun dengan e-mel itu tidak dijumpai.' : 'Gagal: ' + error.message);
+    return toast(notFound ? t('account_not_found') : t('failed', { msg: error.message }));
   }
-  toast('Pautan log masuk dihantar. Semak e-mel anda.');
+  toast(t('login_sent'));
 }
 
 async function signOutAccount() {
-  if (!confirm('Log keluar? Anda boleh log masuk semula dengan e-mel yang sama.')) return;
+  if (!confirm(t('confirm_logout'))) return;
   await supabaseClient.auth.signOut();
   location.reload(); // mulakan sesi tetamu baharu
 }
@@ -676,11 +967,12 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     const changed = currentUser?.id !== session.user.id;
     currentUser = session.user;
     renderAccount();
+    renderUserInfo();
     if (changed && event !== 'INITIAL_SESSION') {
       await fetchReceipts();
-      toast('Log masuk berjaya.');
+      toast(t('login_ok'));
     } else if (event === 'USER_UPDATED' && !session.user.is_anonymous) {
-      toast('E-mel disahkan. Akaun anda kini kekal.');
+      toast(t('email_verified'));
     }
   }, 0);
 });
@@ -716,10 +1008,9 @@ $('currency-select').addEventListener('change', (e) => {
 });
 
 // Init
-applyTheme(localStorage.getItem('theme') || 'light');
 $('currency-select').value = currency;
 $('month-input').value = todayStr().slice(0, 7);
-fillCategorySelects();
-renderIconPicker();
+applyTheme(localStorage.getItem('theme') || 'light');
+applyLang(currentLang);
 switchView('history');
 initAuth();

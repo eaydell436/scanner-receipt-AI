@@ -304,7 +304,7 @@ async function prepareForAI(file) {
 
 // Panggil Supabase Edge Function 'scan-receipt' (Gemini)
 async function extractReceiptData(file) {
-  if (!currentUser) return null;
+  if (!currentUser) throw new Error('Belum log masuk (sesi belum sedia). Refresh app.');
   const payload = await prepareForAI(file);
   const { data, error } = await supabaseClient.functions.invoke('scan-receipt', {
     body: { ...payload, categories: allCats().map((c) => c.name) },

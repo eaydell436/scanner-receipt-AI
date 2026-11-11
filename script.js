@@ -339,6 +339,8 @@ async function saveReceipt() {
   btn.textContent = 'Menyimpan...';
 
   try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const uid = session?.user?.id || currentUser.id;
     const old = editingId ? receipts.find((x) => x.id === editingId) : null;
     let image_url = old?.image_url || null;
     let image_path = old?.image_path || null;
@@ -346,11 +348,11 @@ async function saveReceipt() {
 
     if (pendingFile) {
       const ext = (pendingFile.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const path = `${currentUser.id}/${Date.now()}.${ext}`;
+      const path = `${uid}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabaseClient.storage
         .from(BUCKET)
         .upload(path, pendingFile, { contentType: pendingFile.type });
-      if (upErr) throw upErr;
+      if (upErr) throw new Error('Muat naik gambar gagal: ' + upErr.message);
       pathToDelete = old?.image_path || null;
       image_path = path;
       image_url = supabaseClient.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
@@ -373,8 +375,8 @@ async function saveReceipt() {
 
     const { error } = editingId
       ? await supabaseClient.from('receipts').update(payload).eq('id', editingId)
-      : await supabaseClient.from('receipts').insert([{ ...payload, user_id: currentUser.id }]);
-    if (error) throw error;
+      : await supabaseClient.from('receipts').insert([{ ...payload, user_id: uid }]);
+    if (error) throw new Error('Simpan data gagal: ' + error.message);
 
     if (pathToDelete) await supabaseClient.storage.from(BUCKET).remove([pathToDelete]);
 

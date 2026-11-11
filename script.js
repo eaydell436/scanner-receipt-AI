@@ -1020,3 +1020,12 @@ applyTheme(localStorage.getItem('theme') || 'light');
 applyLang(currentLang);
 switchView('history');
 initAuth();
+
+// BARU: daftar service worker (untuk PWA / pasang app)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('./sw.js')
+      .catch((e) => console.warn('Service worker gagal:', e));
+  });
+}

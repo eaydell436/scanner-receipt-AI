@@ -68,7 +68,7 @@ const I18N = {
     need_amount: 'Sila isi jumlah yang sah.',
     need_date: 'Sila pilih tarikh.',
     not_logged_in: 'Belum log masuk. Cuba sebentar lagi.',
-    no_session: 'Belum log masuk (sesi belum sedia). Refresh app.',
+    no_session: 'Belum log masuk (sesi belum sedia). Sila muat semula aplikasi.',
     saved: 'Resit disimpan.',
     updated: 'Resit dikemas kini.',
     save_failed: 'Gagal simpan: {msg}',
@@ -234,6 +234,12 @@ const I18N = {
 
 // Nama kategori lalai disimpan dalam DB dalam bentuk asal; hanya paparan diterjemah
 const CAT_LABELS = {
+  'F&B': { ms: 'Makanan & Minuman', en: 'F&B' },
+  Utility: { ms: 'Utiliti', en: 'Utility' },
+  Accommodation: { ms: 'Penginapan', en: 'Accommodation' },
+  Transportation: { ms: 'Pengangkutan', en: 'Transportation' },
+  Shopping: { ms: 'Membeli-belah', en: 'Shopping' },
+  Medical: { ms: 'Perubatan', en: 'Medical' },
   Gaji: { ms: 'Gaji', en: 'Salary' },
   'Lain-lain': { ms: 'Lain-lain', en: 'Others' },
 };

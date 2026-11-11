@@ -10,7 +10,20 @@ const I18N = {
     empty_none: 'Belum ada resit. Tekan Tambah atau butang kamera untuk bermula.',
     empty_nomatch: 'Tiada padanan.',
     title_dashboard: 'Ringkasan',
-    dash_sub: 'Kosongkan bulan untuk lihat semua data',
+    dash_sub: 'Kosongkan tarikh untuk lihat semua data',
+    date_from: 'Dari',
+    date_to: 'Hingga',
+    chart_title: 'Graf',
+    chart_type: 'Jenis graf',
+    ct_pie: 'Carta pai',
+    ct_bar: 'Bar menegak',
+    ct_hbar: 'Bar mendatar',
+    ct_stacked: 'Bar bertindan',
+    compare: 'Bandingkan dengan julat tarikh lain (B)',
+    chart_hint: 'Julat A guna tarikh Dari/Hingga di atas. Graf menunjukkan perbelanjaan.',
+    all_dates: 'Semua tarikh',
+    chart_total: 'Jumlah',
+    chart_unavailable: 'Pustaka graf belum dimuat. Sambung ke internet dan muat semula.',
     net_balance: 'Baki bersih',
     income: 'Pendapatan',
     expense: 'Perbelanjaan',
@@ -124,7 +137,20 @@ const I18N = {
     empty_none: 'No receipts yet. Tap Add or the camera button to get started.',
     empty_nomatch: 'No matches.',
     title_dashboard: 'Summary',
-    dash_sub: 'Clear the month to see all data',
+    dash_sub: 'Clear the dates to see all data',
+    date_from: 'From',
+    date_to: 'To',
+    chart_title: 'Chart',
+    chart_type: 'Chart type',
+    ct_pie: 'Pie chart',
+    ct_bar: 'Vertical bar',
+    ct_hbar: 'Horizontal bar',
+    ct_stacked: 'Stacked bar',
+    compare: 'Compare with another date range (B)',
+    chart_hint: 'Range A uses the From/To dates above. The chart shows expenses.',
+    all_dates: 'All dates',
+    chart_total: 'Total',
+    chart_unavailable: 'Chart library not loaded. Go online and refresh.',
     net_balance: 'Net balance',
     income: 'Income',
     expense: 'Expense',
@@ -381,7 +407,9 @@ function applyTheme(theme) {
     theme === 'dark'
       ? `${ico('sun', 'ic-sm')}${esc(t('theme_to_light'))}`
       : `${ico('moon', 'ic-sm')}${esc(t('theme_to_dark'))}`;
+  renderChart(); // warna graf ikut tema
 }
+
 function toggleTheme() {
   applyTheme(htmlTag.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 }
@@ -762,9 +790,12 @@ function renderHistory() {
 }
 
 function renderDashboard() {
-  const month = $('month-input').value; // 'YYYY-MM' atau ''
-  const list = receipts.filter((r) => !month || r.receipt_date.startsWith(month));
-
+  let from = $('date-from').value; // 'YYYY-MM-DD' atau ''
+  let to = $('date-to').value;
+  if (from && to && from > to) [from, to] = [to, from]; // betulkan jika terbalik
+  const list = receipts.filter(
+    (r) => (!from || r.receipt_date >= from) && (!to || r.receipt_date <= to)
+  );
   let income = 0, expense = 0;
   const byCat = {};
   list.forEach((r) => {
@@ -792,6 +823,197 @@ function renderDashboard() {
         </div>`)
         .join('')
     : `<p class="empty-msg">${esc(t('no_expense'))}</p>`;
+
+  renderChart();
+}
+
+// ==========================================
+// 6b. GRAF (pai, bar menegak/mendatar, bertindan, banding julat)
+// ==========================================
+const CHART_COLORS = [
+  '#1f4e79', '#2f7d5b', '#d98e2b', '#b4412f', '#7a5ea8',
+  '#2a9db0', '#8c6d3f', '#c25b8e', '#5f6b7a', '#7fa650',
+];
+let chartInstances = [];
+
+// Julat A (atas) + julat B (jika dibandingkan) -> jumlah perbelanjaan mengikut kategori
+function getChartRanges() {
+  const defs = [{ letter: 'A', from: $('date-from').value, to: $('date-to').value }];
+  if ($('cmp-on').checked) {
+    defs.push({ letter: 'B', from: $('cmp-from').value, to: $('cmp-to').value });
+  }
+
+  return defs.map((r) => {
+    let { from, to } = r;
+    if (from && to && from > to) [from, to] = [to, from];
+
+    const totals = {};
+    receipts.forEach((x) => {
+      if (x.type === 'income') return;
+      if (from && x.receipt_date < from) return;
+      if (to && x.receipt_date > to) return;
+      const k = x.category || 'Lain-lain';
+      totals[k] = (totals[k] || 0) + (parseFloat(x.total_amount) || 0);
+    });
+
+    const dates =
+      !from && !to
+        ? t('all_dates')
+        : `${from ? formatDate(from) : '…'} – ${to ? formatDate(to) : '…'}`;
+    const sum = Object.values(totals).reduce((a, b) => a + b, 0);
+    return { letter: r.letter, dates, label: `${r.letter}: ${dates}`, totals, sum };
+  });
+}
+
+function renderChart() {
+  const wrap = $('chart-wrap');
+  if (!wrap) return;
+
+  chartInstances.forEach((c) => c.destroy());
+  chartInstances = [];
+  wrap.innerHTML = '';
+  $('cmp-fields').style.display = $('cmp-on').checked ? 'block' : 'none';
+
+  if (typeof Chart === 'undefined') {
+    wrap.innerHTML = `<p class="empty-msg">${esc(t('chart_unavailable'))}</p>`;
+    return;
+  }
+
+  const type = $('chart-type').value;
+  const ranges = getChartRanges();
+  const cats = [...new Set(ranges.flatMap((r) => Object.keys(r.totals)))].sort(
+    (a, b) => ranges.reduce((s, r) => s + (r.totals[b] || 0) - (r.totals[a] || 0), 0)
+  );
+  if (!cats.length) {
+    wrap.innerHTML = `<p class="empty-msg">${esc(t('no_expense'))}</p>`;
+    return;
+  }
+
+  // Warna ikut tema semasa
+  const css = getComputedStyle(document.documentElement);
+  const cMuted = css.getPropertyValue('--text-muted').trim();
+  const cGrid = css.getPropertyValue('--border-color').trim();
+  const cCard = css.getPropertyValue('--bg-card').trim();
+  const rangeColors = [css.getPropertyValue('--primary').trim(), '#d98e2b'];
+  Chart.defaults.color = cMuted;
+  Chart.defaults.font.family = "'IBM Plex Sans', system-ui, sans-serif";
+
+  const colorOf = (name) => {
+    const i = allCats().findIndex((c) => c.name === name);
+    return CHART_COLORS[(i < 0 ? cats.indexOf(name) : i) % CHART_COLORS.length];
+  };
+  const addChart = (height, config) => {
+    const box = document.createElement('div');
+    box.className = 'chart-box';
+    box.style.height = height + 'px';
+    const cv = document.createElement('canvas');
+    box.appendChild(cv);
+    wrap.appendChild(box);
+    chartInstances.push(new Chart(cv, config));
+  };
+  const base = { responsive: true, maintainAspectRatio: false };
+  const axisTick = { callback: (v) => Number(v).toLocaleString('en-MY') };
+  const legendBottom = { position: 'bottom', labels: { boxWidth: 12 } };
+
+  // ----- PAI: satu pai bagi setiap julat -----
+  if (type === 'pie') {
+    ranges.forEach((r) => {
+      const sub = document.createElement('p');
+      sub.className = 'chart-sub';
+      sub.textContent = `${r.label} · ${money(r.sum)}`;
+      wrap.appendChild(sub);
+
+      const names = cats.filter((c) => r.totals[c]);
+      if (!names.length) {
+        wrap.insertAdjacentHTML('beforeend', `<p class="empty-msg">${esc(t('no_expense'))}</p>`);
+        return;
+      }
+      addChart(250, {
+        type: 'pie',
+        data: {
+          labels: names.map(catLabel),
+          datasets: [{
+            data: names.map((n) => r.totals[n]),
+            backgroundColor: names.map(colorOf),
+            borderColor: cCard,
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          ...base,
+          plugins: {
+            legend: legendBottom,
+            tooltip: { callbacks: { label: (c) => `${c.label}: ${money(c.parsed)}` } },
+          },
+        },
+      });
+    });
+    return;
+  }
+
+  // ----- BAR BERTINDAN: x = julat, tindanan = kategori -----
+  if (type === 'stacked') {
+    addChart(340, {
+      type: 'bar',
+      data: {
+        labels: ranges.map((r) => [r.letter, r.dates]),
+        datasets: cats.map((c) => ({
+          label: catLabel(c),
+          data: ranges.map((r) => r.totals[c] || 0),
+          backgroundColor: colorOf(c),
+        })),
+      },
+      options: {
+        ...base,
+        plugins: {
+          legend: legendBottom,
+          tooltip: {
+            filter: (item) => item.parsed.y > 0,
+            callbacks: {
+              label: (c) => `${c.dataset.label}: ${money(c.parsed.y)}`,
+              footer: (items) => `${t('chart_total')}: ${money(ranges[items[0].dataIndex].sum)}`,
+            },
+          },
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, beginAtZero: true, grid: { color: cGrid }, ticks: axisTick },
+        },
+      },
+    });
+    return;
+  }
+
+  // ----- BAR MENEGAK / MENDATAR: x = kategori, satu bar bagi setiap julat -----
+  const horizontal = type === 'hbar';
+  const catAxis = horizontal ? 'y' : 'x';
+  const valAxis = horizontal ? 'x' : 'y';
+  const height = horizontal ? Math.max(240, cats.length * (ranges.length * 22 + 16) + 70) : 320;
+
+  addChart(height, {
+    type: 'bar',
+    data: {
+      labels: cats.map(catLabel),
+      datasets: ranges.map((r, i) => ({
+        label: r.label,
+        data: cats.map((c) => r.totals[c] || 0),
+        backgroundColor: rangeColors[i],
+        borderRadius: 4,
+      })),
+    },
+    options: {
+      ...base,
+      indexAxis: horizontal ? 'y' : 'x',
+      plugins: {
+        legend: { ...legendBottom, display: ranges.length > 1 },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${money(c.parsed[valAxis])}` } },
+      },
+      scales: {
+        [catAxis]: { grid: { display: false } },
+        [valAxis]: { beginAtZero: true, grid: { color: cGrid }, ticks: axisTick },
+      },
+    },
+  });
 }
 
 // ==========================================
@@ -1005,7 +1227,11 @@ $('new-cat-picker').addEventListener('click', (e) => {
 });
 $('search-input').addEventListener('input', renderHistory);
 $('filter-cat').addEventListener('change', renderHistory);
-$('month-input').addEventListener('change', renderDashboard);
+$('date-from').addEventListener('change', renderDashboard);
+$('date-to').addEventListener('change', renderDashboard);
+['chart-type', 'cmp-on', 'cmp-from', 'cmp-to'].forEach((id) =>
+  $(id).addEventListener('change', renderChart)
+);
 $('currency-select').addEventListener('change', (e) => {
   currency = e.target.value;
   localStorage.setItem('currency', currency);
@@ -1015,7 +1241,15 @@ $('currency-select').addEventListener('change', (e) => {
 
 // Init
 $('currency-select').value = currency;
-$('month-input').value = todayStr().slice(0, 7);
+$('date-from').value = todayStr().slice(0, 7) + '-01'; // 1hb bulan ini
+$('date-to').value = todayStr(); // hari ini
+
+// Julat B lalai: seluruh bulan lepas
+const ymd = (x) =>
+  `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+const nowD = new Date();
+$('cmp-from').value = ymd(new Date(nowD.getFullYear(), nowD.getMonth() - 1, 1));
+$('cmp-to').value = ymd(new Date(nowD.getFullYear(), nowD.getMonth(), 0));
 applyTheme(localStorage.getItem('theme') || 'light');
 applyLang(currentLang);
 switchView('history');

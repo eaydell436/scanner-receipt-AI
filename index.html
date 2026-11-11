@@ -398,8 +398,16 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 .seg button + button { border-left: 1px solid var(--border-color); }
 .seg button.active { background: var(--primary); color: var(--on-primary); }
 .seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+/* ================= GRAF ================= */
+.chart-card { padding: 14px 16px; }
+.check-row { display: flex; align-items: center; gap: 10px; font-size: 14px; margin: 4px 0 12px; cursor: pointer; }
+.check-row input { width: 20px; height: 20px; padding: 0; accent-color: var(--primary); flex-shrink: 0; }
+.chart-box { position: relative; width: 100%; }
+.chart-sub { font-size: 13px; font-weight: 500; margin: 14px 0 6px; overflow-wrap: anywhere; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   </head>
   <body>
     <!-- ===== SPRITE IKON (gaya Lucide, stroke) ===== -->
@@ -467,7 +475,16 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         <main id="view-dashboard" class="view">
           <h1 data-i18n="title_dashboard"></h1>
           <p class="subtitle" data-i18n="dash_sub"></p>
-          <input type="month" id="month-input" />
+          <div class="field-row">
+            <div class="field">
+              <label for="date-from" data-i18n="date_from"></label>
+              <input type="date" id="date-from" />
+            </div>
+            <div class="field">
+              <label for="date-to" data-i18n="date_to"></label>
+              <input type="date" id="date-to" />
+            </div>
+          </div>
           <header class="balance-card">
             <p class="label" data-i18n="net_balance"></p>
             <h2 id="dash-net">MYR 0.00</h2>
@@ -484,6 +501,39 @@ input, select, textarea { min-width: 0; max-width: 100%; }
           </header>
           <div class="section-title" data-i18n="by_category"></div>
           <div id="dash-breakdown"></div>
+
+          <!-- BARU: GRAF -->
+          <div class="section-title" data-i18n="chart_title"></div>
+          <div class="card chart-card">
+            <div class="field">
+              <label for="chart-type" data-i18n="chart_type"></label>
+              <select id="chart-type">
+                <option value="pie" data-i18n="ct_pie"></option>
+                <option value="bar" data-i18n="ct_bar"></option>
+                <option value="hbar" data-i18n="ct_hbar"></option>
+                <option value="stacked" data-i18n="ct_stacked"></option>
+              </select>
+            </div>
+            <label class="check-row">
+              <input type="checkbox" id="cmp-on" />
+              <span data-i18n="compare"></span>
+            </label>
+            <div id="cmp-fields" style="display: none">
+              <div class="field-row">
+                <div class="field">
+                  <label for="cmp-from" data-i18n="date_from"></label>
+                  <input type="date" id="cmp-from" />
+                </div>
+                <div class="field">
+                  <label for="cmp-to" data-i18n="date_to"></label>
+                  <input type="date" id="cmp-to" />
+                </div>
+              </div>
+            </div>
+            <p class="muted" data-i18n="chart_hint" style="margin-bottom: 8px"></p>
+            <div id="chart-wrap"></div>
+          </div>
+          <!-- AKHIR BARU -->
         </main>
 
         <!-- ===== UPLOAD / SCAN ===== -->

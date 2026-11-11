@@ -274,7 +274,7 @@ async function handleFile(file) {
     toast('Siap! Sila semak butiran sebelum simpan.');
   } catch (e) {
     console.warn('AI gagal baca resit:', e);
-    toast('AI tak dapat baca resit. Sila isi manual.');
+    toast('AI gagal: ' + e.message);
   }
 }
 
@@ -309,7 +309,14 @@ async function extractReceiptData(file) {
   const { data, error } = await supabaseClient.functions.invoke('scan-receipt', {
     body: { ...payload, categories: allCats().map((c) => c.name) },
   });
-  if (error) throw error;
+  if (error) {
+    let msg = error.message;
+    try {
+      const body = await error.context.json(); // mesej sebenar daripada Edge Function
+      msg = body.error || msg;
+    } catch {}
+    throw new Error(msg);
+  }
   return data;
 }
 

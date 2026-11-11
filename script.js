@@ -258,31 +258,59 @@ async function handleFile(file) {
     toast('Fail terlalu besar (maks 10MB).');
     return;
   }
-  if (!$('sheet').classList.contains('open')) {
-    openSheet(null, file);
-    toast('Sila semak & lengkapkan butiran resit.');
-  } else {
-    setPendingFile(file);
-  }
+  if (!$('sheet').classList.contains('open')) openSheet(null, file);
+  else setPendingFile(file);
 
-  // Auto-isi melalui AI (jika sudah disambungkan)
+  toast('🤖 AI sedang membaca resit...');
   try {
     const ai = await extractReceiptData(file);
-    if (ai) {
-      if (ai.merchant_name && !$('f-merchant').value) $('f-merchant').value = ai.merchant_name;
-      if (ai.total_amount && !$('f-amount').value) $('f-amount').value = ai.total_amount;
-      if (ai.receipt_date) $('f-date').value = ai.receipt_date;
-      if (ai.category && allCats().some((c) => c.name === ai.category)) $('f-category').value = ai.category;
-    }
+    // pastikan borang masih terbuka dan fail yang sama
+    if (!ai || !$('sheet').classList.contains('open') || pendingFile !== file) return;
+
+    if (ai.merchant_name) $('f-merchant').value = ai.merchant_name;
+    if (ai.total_amount != null) $('f-amount').value = ai.total_amount;
+    if (ai.receipt_date) $('f-date').value = ai.receipt_date;
+    if (ai.category && allCats().some((c) => c.name === ai.category)) $('f-category').value = ai.category;
+    toast('Siap! Sila semak butiran sebelum simpan.');
   } catch (e) {
     console.warn('AI gagal baca resit:', e);
+    toast('AI tak dapat baca resit. Sila isi manual.');
   }
 }
 
-// TODO: sambungkan ke API OCR/AI anda (Edge Function Supabase, dll).
-// Pulangkan: { merchant_name, total_amount, receipt_date: 'YYYY-MM-DD', category } atau null
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result.split(',')[1]);
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+}
+
+// Kecilkan gambar (maks 1600px) supaya laju & jimat kuota
+async function prepareForAI(file) {
+  if (file.type === 'application/pdf') {
+    return { mimeType: 'application/pdf', image: await blobToBase64(file) };
+  }
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.85));
+  return { mimeType: 'image/jpeg', image: await blobToBase64(blob) };
+}
+
+// Panggil Supabase Edge Function 'scan-receipt' (Gemini)
 async function extractReceiptData(file) {
-  return null;
+  if (!currentUser) return null;
+  const payload = await prepareForAI(file);
+  const { data, error } = await supabaseClient.functions.invoke('scan-receipt', {
+    body: { ...payload, categories: allCats().map((c) => c.name) },
+  });
+  if (error) throw error;
+  return data;
 }
 
 async function saveReceipt() {

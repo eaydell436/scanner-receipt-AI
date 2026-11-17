@@ -679,7 +679,7 @@ const isRetryable = (e) =>
   /503|overload|unavailable|high demand|busy|timeout/i.test(e.message || '');
 
 // Cuba semula automatik jika 503 / pelayan sibuk (backoff 1.5s, 3s)
-async function invokeScanWithRetry(payload, token, maxTries = 3) {
+async function invokeScanWithRetry(payload, token, maxTries = 2) {
   let lastErr;
   for (let i = 1; i <= maxTries; i++) {
     try {

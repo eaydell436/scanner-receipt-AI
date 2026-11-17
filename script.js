@@ -867,9 +867,11 @@ async function saveReceipt() {
       const path = `${uid}/${Date.now()}.${ext}`;
       const contentType =
         pendingFile.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg');
+      // Baca fail ke memori dahulu (elak ralat Chrome Android pada fail PDF dari aplikasi lain)
+      const body = new Blob([await pendingFile.arrayBuffer()], { type: contentType });
       const { error: upErr } = await supabaseClient.storage
         .from(BUCKET)
-        .upload(path, pendingFile, { contentType });
+        .upload(path, body, { contentType });
         if (upErr) throw new Error(t('upload_failed', { msg: upErr.message }));
       pathToDelete = old?.image_path || null;
       image_path = path;

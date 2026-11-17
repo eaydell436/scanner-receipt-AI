@@ -865,10 +865,12 @@ async function saveReceipt() {
     if (pendingFile) {
       const ext = (pendingFile.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
       const path = `${uid}/${Date.now()}.${ext}`;
+      const contentType =
+        pendingFile.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg');
       const { error: upErr } = await supabaseClient.storage
         .from(BUCKET)
-        .upload(path, pendingFile, { contentType: pendingFile.type });
-      if (upErr) throw new Error(t('upload_failed', { msg: upErr.message }));
+        .upload(path, pendingFile, { contentType });
+        if (upErr) throw new Error(t('upload_failed', { msg: upErr.message }));
       pathToDelete = old?.image_path || null;
       image_path = path;
       image_url = supabaseClient.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;

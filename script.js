@@ -638,18 +638,18 @@ function blobToBase64(blob) {
   });
 }
 
-// Kecilkan gambar (maks 1600px) supaya laju & jimat kuota
+// Kecilkan gambar (maks 1280px) supaya laju & jimat kuota
 async function prepareForAI(file) {
   if (file.type === 'application/pdf') {
     return { mimeType: 'application/pdf', image: await blobToBase64(file) };
   }
   const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const scale = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bmp.width * scale);
   canvas.height = Math.round(bmp.height * scale);
   canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.85));
+  const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.75));
   return { mimeType: 'image/jpeg', image: await blobToBase64(blob) };
 }
 

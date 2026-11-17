@@ -64,6 +64,15 @@ const I18N = {
     amount_label: 'Jumlah',
     date_label: 'Tarikh',
     category_label: 'Kategori',
+    payment_label: 'Cara pembayaran',
+    pay_none: 'Tidak dinyatakan',
+    pay_cash: 'Tunai',
+    pay_debit: 'Kad debit',
+    pay_credit: 'Kad kredit',
+    pay_transfer: 'Pindahan bank / DuitNow',
+    pay_ewallet: 'E-dompet (TNG, GrabPay)',
+    pay_other: 'Lain-lain',
+    csv_payment: 'Cara Bayar',
     notes_label: 'Nota (pilihan)',
     camera: 'Kamera',
     remove: 'Buang',
@@ -200,6 +209,15 @@ const I18N = {
     amount_label: 'Amount',
     date_label: 'Date',
     category_label: 'Category',
+    payment_label: 'Payment method',
+    pay_none: 'Not specified',
+    pay_cash: 'Cash',
+    pay_debit: 'Debit card',
+    pay_credit: 'Credit card',
+    pay_transfer: 'Bank transfer / DuitNow',
+    pay_ewallet: 'E-wallet (TNG, GrabPay)',
+    pay_other: 'Other',
+    csv_payment: 'Payment',
     notes_label: 'Notes (optional)',
     camera: 'Camera',
     remove: 'Remove',
@@ -318,6 +336,16 @@ const CAT_ICONS = [
   'utensils', 'receipt', 'bed', 'car', 'bag', 'heart-pulse', 'wallet', 'package', 'tag',
   'coffee', 'home', 'zap', 'plane', 'gift', 'book', 'phone', 'briefcase',
 ];
+
+const PAYMENT_METHODS = ['cash', 'debit', 'credit', 'transfer', 'ewallet', 'other'];
+const payLabel = (k) => (k ? I18N[currentLang]['pay_' + k] ?? k : '');
+
+function fillPaymentSelect(selected) {
+  $('f-payment').innerHTML =
+    `<option value="">${esc(t('pay_none'))}</option>` +
+    PAYMENT_METHODS.map((k) => `<option value="${k}">${esc(payLabel(k))}</option>`).join('');
+  $('f-payment').value = PAYMENT_METHODS.includes(selected) ? selected : '';
+}
 
 let currentUser = null;
 let receipts = [];
@@ -457,6 +485,7 @@ function applyLang(lang) {
   applyTheme(htmlTag.getAttribute('data-theme') || 'light');
   $('sheet-title').textContent = editingId ? t('sheet_edit') : t('sheet_add');
   fillCategorySelects($('f-category').value);
+  fillPaymentSelect($('f-payment').value);
   renderImagePreview();
   renderHistory();
   renderDashboard();
@@ -552,6 +581,7 @@ function openSheet(id = null, file = null) {
   $('f-date').value = r?.receipt_date || todayStr();
   $('f-notes').value = r?.notes || '';
   fillCategorySelects(r?.category || 'Lain-lain');
+  fillPaymentSelect(r?.payment_method || '');
 
   if (file) setPendingFile(file);
   else renderImagePreview();
@@ -827,8 +857,9 @@ async function saveReceipt() {
       receipt_date: date,
       total_amount: amount,
       category: $('f-category').value,
+      payment_method: $('f-payment').value || null,
       type: currentType,
-      notes: $('f-notes').value.trim() || null,
+            notes: $('f-notes').value.trim() || null,
       image_url,
       image_path,
     };
@@ -902,8 +933,8 @@ function renderHistory() {
           <div class="receipt-icon">${ico(catIcon(r.category))}</div>
           <div class="receipt-info">
             <h4>${esc(r.merchant_name)}</h4>
-            <p><span>${formatDate(r.receipt_date)}</span>${r.image_url ? ico('paperclip', 'ic-sm') : ''}</p>
-          </div>
+            <p><span>${formatDate(r.receipt_date)}${r.payment_method ? ' · ' + esc(payLabel(r.payment_method)) : ''}</span>${r.image_url ? ico('paperclip', 'ic-sm') : ''}</p>
+            </div>
         </div>
         <div class="receipt-amount ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : '-'}${money(r.total_amount)}</div>
       </div>`;
@@ -1197,12 +1228,12 @@ function exportCSV() {
   if (!receipts.length) return toast(t('no_export'));
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const header = [
-    t('csv_date'), t('csv_store'), t('csv_type'), t('csv_category'),
+    t('csv_date'), t('csv_store'), t('csv_type'), t('csv_category'), t('csv_payment'),
     t('csv_amount'), t('csv_notes'), t('csv_image'),
   ];
   const rows = receipts.map((r) =>
-    [r.receipt_date, r.merchant_name, r.type || 'expense', r.category, r.total_amount, r.notes, r.image_url]
-      .map(cell)
+    [r.receipt_date, r.merchant_name, r.type || 'expense', r.category, payLabel(r.payment_method), r.total_amount, r.notes, r.image_url]
+    .map(cell)
       .join(',')
   );
   const blob = new Blob(['\uFEFF' + [header.map(cell).join(','), ...rows].join('\n')], {

@@ -30,9 +30,9 @@ const I18N = {
     by_category: 'Perbelanjaan mengikut kategori',
     no_expense: 'Tiada perbelanjaan untuk tempoh ini.',
     add_receipt: 'Tambah resit',
-    scan_info_sub: 'Imbas dengan kamera, pilih dari galeri, atau taip manual',
-    scan_title: 'Imbas resit',
-    scan_sub: 'Ambil gambar resit dengan kamera',
+    scan_info_sub: 'Ambil gambar, pilih dari galeri, atau taip manual. Tekan Imbas AI untuk baca resit.',
+    scan_title: 'Ambil gambar resit',
+    scan_sub: 'Gambar akan dibuka dalam borang, kemudian tekan Imbas AI',
     manual: 'Manual',
     gallery: 'Galeri',
     title_settings: 'Tetapan',
@@ -74,7 +74,16 @@ const I18N = {
     open_pdf: 'Buka PDF',
     receipt_alt: 'Resit',
     file_too_big: 'Fail terlalu besar (maks 10MB).',
-    ai_reading: 'AI sedang membaca resit...',
+    // ---- Imbas AI (manual) ----
+    scan_ai_btn: 'Imbas AI',
+    scan_hint: 'Gambar ditambah. Tekan "Imbas AI" untuk baca resit.',
+    scan_need_image: 'Sila tambah gambar resit dahulu.',
+    scanning_title: 'Mengimbas resit...',
+    scanning_sub: 'AI sedang membaca butiran resit',
+    scan_retry: 'Pelayan sibuk. Mencuba lagi ({n}/{max})...',
+    scan_done: 'Siap!',
+    scan_cancel: 'Batal',
+    ai_busy: 'Pelayan AI sedang sibuk (503). Sila cuba Imbas AI sekali lagi sebentar nanti, atau isi manual.',
     ai_done: 'Siap. Sila semak butiran sebelum simpan.',
     ai_failed: 'AI gagal: {msg}',
     need_merchant: 'Sila isi nama kedai / butiran.',
@@ -157,9 +166,9 @@ const I18N = {
     by_category: 'Expenses by category',
     no_expense: 'No expenses for this period.',
     add_receipt: 'Add receipt',
-    scan_info_sub: 'Scan with the camera, pick from gallery, or enter manually',
-    scan_title: 'Scan receipt',
-    scan_sub: 'Take a photo of your receipt',
+    scan_info_sub: 'Take a photo, pick from gallery, or enter manually. Tap AI Scan to read the receipt.',
+    scan_title: 'Take receipt photo',
+    scan_sub: 'The photo opens in the form, then tap AI Scan',
     manual: 'Manual',
     gallery: 'Gallery',
     title_settings: 'Settings',
@@ -201,7 +210,16 @@ const I18N = {
     open_pdf: 'Open PDF',
     receipt_alt: 'Receipt',
     file_too_big: 'File is too large (max 10MB).',
-    ai_reading: 'AI is reading the receipt...',
+    // ---- AI Scan (manual) ----
+    scan_ai_btn: 'AI Scan',
+    scan_hint: 'Image added. Tap "AI Scan" to read the receipt.',
+    scan_need_image: 'Please add a receipt image first.',
+    scanning_title: 'Scanning receipt...',
+    scanning_sub: 'AI is reading the receipt details',
+    scan_retry: 'Server busy. Retrying ({n}/{max})...',
+    scan_done: 'Done!',
+    scan_cancel: 'Cancel',
+    ai_busy: 'The AI server is busy (503). Please tap AI Scan again shortly, or fill in manually.',
     ai_done: 'Done. Please review the details before saving.',
     ai_failed: 'AI failed: {msg}',
     need_merchant: 'Please enter the store / description.',
@@ -313,6 +331,7 @@ let removeImageFlag = false; // tandakan gambar lama untuk dibuang
 let currentType = 'expense';
 let previewObjectUrl = null;
 let newCatIcon = 'tag';
+let scanToken = 0; // untuk batal / abaikan hasil imbasan lama
 
 const $ = (id) => document.getElementById(id);
 
@@ -359,7 +378,7 @@ function toast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
 const allCats = () => [...DEFAULT_CATS, ...customCats];
@@ -519,6 +538,7 @@ function setType(type) {
 }
 
 function openSheet(id = null, file = null) {
+  cancelScan();
   editingId = id;
   pendingFile = null;
   removeImageFlag = false;
@@ -540,6 +560,7 @@ function openSheet(id = null, file = null) {
 }
 
 function closeSheet() {
+  cancelScan();
   $('sheet').classList.remove('open');
   pendingFile = null;
   editingId = null;
@@ -591,10 +612,13 @@ function renderImagePreview() {
 
   box.innerHTML = html;
   $('remove-image-btn').style.display = hasImage ? 'inline-flex' : 'none';
+  // Butang Imbas AI hanya muncul bila ada gambar / PDF
+  $('scan-ai-btn').style.display = hasImage ? 'inline-flex' : 'none';
 }
 
-// Kamera / Galeri / PDF -> semua masuk ke sini
-async function handleFile(file) {
+// Kamera / Galeri / PDF -> masuk ke sini. TIDAK lagi auto-scan.
+// Pengguna perlu tekan butang "Imbas AI" secara manual.
+function handleFile(file) {
   if (!file) return;
   if (file.size > 10 * 1024 * 1024) {
     toast(t('file_too_big'));
@@ -602,22 +626,7 @@ async function handleFile(file) {
   }
   if (!$('sheet').classList.contains('open')) openSheet(null, file);
   else setPendingFile(file);
-
-  toast(t('ai_reading'));
-  try {
-    const ai = await extractReceiptData(file);
-    // pastikan borang masih terbuka dan fail yang sama
-    if (!ai || !$('sheet').classList.contains('open') || pendingFile !== file) return;
-
-    if (ai.merchant_name) $('f-merchant').value = ai.merchant_name;
-    if (ai.total_amount != null) $('f-amount').value = ai.total_amount;
-    if (ai.receipt_date) $('f-date').value = ai.receipt_date;
-    if (ai.category && allCats().some((c) => c.name === ai.category)) $('f-category').value = ai.category;
-    toast(t('ai_done'));
-  } catch (e) {
-    console.warn('AI gagal baca resit:', e);
-    toast(t('ai_failed', { msg: e.message }));
-  }
+  toast(t('scan_hint'));
 }
 
 function blobToBase64(blob) {
@@ -644,22 +653,135 @@ async function prepareForAI(file) {
   return { mimeType: 'image/jpeg', image: await blobToBase64(blob) };
 }
 
-// Panggil Supabase Edge Function 'scan-receipt' (Gemini)
-async function extractReceiptData(file) {
-  if (!currentUser) throw new Error(t('no_session'));
-  const payload = await prepareForAI(file);
+// Panggil Supabase Edge Function 'scan-receipt' (Gemini) sekali sahaja
+async function invokeScan(payload) {
   const { data, error } = await supabaseClient.functions.invoke('scan-receipt', {
     body: { ...payload, categories: allCats().map((c) => c.name) },
   });
   if (error) {
     let msg = error.message;
+    const status = error.context?.status;
     try {
       const body = await error.context.json(); // mesej sebenar daripada Edge Function
       msg = body.error || msg;
     } catch {}
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.status = status;
+    err.network = error.name === 'FunctionsFetchError' || error.name === 'FunctionsRelayError';
+    throw err;
   }
   return data;
+}
+
+const isRetryable = (e) =>
+  [429, 500, 502, 503, 504].includes(e.status) ||
+  e.network ||
+  /503|overload|unavailable|high demand|busy|timeout/i.test(e.message || '');
+
+// Cuba semula automatik jika 503 / pelayan sibuk (backoff 1.5s, 3s)
+async function invokeScanWithRetry(payload, token, maxTries = 3) {
+  let lastErr;
+  for (let i = 1; i <= maxTries; i++) {
+    try {
+      return await invokeScan(payload);
+    } catch (e) {
+      lastErr = e;
+      if (token !== scanToken) throw e;
+      if (!isRetryable(e) || i === maxTries) break;
+      $('scan-modal-sub').textContent = t('scan_retry', { n: i + 1, max: maxTries });
+      await new Promise((r) => setTimeout(r, 1500 * i));
+      if (token !== scanToken) throw e;
+    }
+  }
+  throw lastErr;
+}
+
+// ---------- Pop up animasi imbasan ----------
+function openScanModal() {
+  const img = $('image-preview').querySelector('img');
+  const inner = img
+    ? `<img src="${esc(img.src)}" alt="" />`
+    : `<div class="scan-paper"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>`;
+  $('scan-frame').innerHTML =
+    inner +
+    `<div class="scan-line"></div><span class="sc tl"></span><span class="sc tr"></span><span class="sc bl"></span><span class="sc br"></span>` +
+    `<div class="scan-check">${ico('check', 'ic-xl')}</div>`;
+  $('scan-modal-title').textContent = t('scanning_title');
+  $('scan-modal-sub').textContent = t('scanning_sub');
+  $('scan-cancel').style.display = '';
+  $('scan-modal').classList.remove('done');
+  $('scan-modal').classList.add('open');
+}
+
+function closeScanModal() {
+  $('scan-modal').classList.remove('open', 'done');
+}
+
+function cancelScan() {
+  scanToken++;
+  closeScanModal();
+}
+
+// Dapatkan fail untuk diimbas: fail baharu, atau gambar sedia ada (mod edit)
+async function getScanSource() {
+  if (pendingFile) return pendingFile;
+  const r = editingId ? receipts.find((x) => x.id === editingId) : null;
+  if (r?.image_url && !removeImageFlag) {
+    const res = await fetch(r.image_url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    return new File([blob], 'receipt', { type: blob.type || 'image/jpeg' });
+  }
+  return null;
+}
+
+// Butang "Imbas AI" (manual)
+async function runScan() {
+  if ($('scan-modal').classList.contains('open')) return;
+  if (!currentUser) return toast(t('no_session'));
+  if (!$('sheet').classList.contains('open')) return;
+
+  const token = ++scanToken;
+  openScanModal();
+
+  try {
+    const file = await getScanSource();
+    if (token !== scanToken) return;
+    if (!file) {
+      closeScanModal();
+      return toast(t('scan_need_image'));
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      closeScanModal();
+      return toast(t('file_too_big'));
+    }
+
+    const payload = await prepareForAI(file);
+    const ai = await invokeScanWithRetry(payload, token);
+    if (token !== scanToken) return; // dibatalkan / sheet ditutup
+    if (!ai) throw new Error('Tiada data');
+
+    if (ai.merchant_name) $('f-merchant').value = ai.merchant_name;
+    if (ai.total_amount != null && !isNaN(parseFloat(ai.total_amount))) $('f-amount').value = parseFloat(ai.total_amount);
+    if (ai.receipt_date) $('f-date').value = ai.receipt_date;
+    if (ai.category && allCats().some((c) => c.name === ai.category)) $('f-category').value = ai.category;
+
+    // Keadaan siap: tunjuk tanda semak sebentar, kemudian tutup
+    $('scan-modal').classList.add('done');
+    $('scan-modal-title').textContent = t('scan_done');
+    $('scan-modal-sub').textContent = '';
+    $('scan-cancel').style.display = 'none';
+    setTimeout(() => {
+      if (token !== scanToken) return;
+      closeScanModal();
+      toast(t('ai_done'));
+    }, 900);
+  } catch (e) {
+    if (token !== scanToken) return;
+    console.warn('AI gagal baca resit:', e);
+    closeScanModal();
+    toast(isRetryable(e) && e.status !== 429 && !e.network ? t('ai_busy') : t('ai_failed', { msg: e.message }));
+  }
 }
 
 async function saveReceipt() {
@@ -1255,7 +1377,7 @@ applyLang(currentLang);
 switchView('history');
 initAuth();
 
-// BARU: daftar service worker (untuk PWA / pasang app)
+// Daftar service worker (untuk PWA / pasang app)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker

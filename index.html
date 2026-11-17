@@ -405,6 +405,54 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 .check-row input { width: 20px; height: 20px; padding: 0; accent-color: var(--primary); flex-shrink: 0; }
 .chart-box { position: relative; width: 100%; }
 .chart-sub { font-size: 13px; font-weight: 500; margin: 14px 0 6px; overflow-wrap: anywhere; }
+
+/* ================= POP UP IMBAS AI ================= */
+.scan-modal {
+  position: absolute; inset: 0; z-index: 400; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(15, 23, 36, 0.72); backdrop-filter: blur(3px);
+}
+.scan-modal.open { display: flex; }
+.scan-card {
+  width: 100%; max-width: 330px; text-align: center;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  border-radius: 16px; padding: 20px; animation: popIn 0.22s ease;
+}
+@keyframes popIn { from { transform: scale(0.92); opacity: 0; } to { transform: none; opacity: 1; } }
+.scan-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: var(--text-main); }
+.scan-card .muted { min-height: 18px; margin-bottom: 16px; font-size: 13px; }
+.scan-frame {
+  position: relative; width: 190px; height: 250px; margin: 0 auto 18px;
+  border-radius: 12px; overflow: hidden; background: var(--bg-card-light);
+  display: flex; align-items: center; justify-content: center;
+}
+.scan-frame img { width: 100%; height: 100%; object-fit: cover; }
+.scan-paper {
+  width: 78%; height: 88%; background: #fff; border-radius: 6px; padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+.scan-paper i { display: block; height: 6px; border-radius: 3px; background: #d5dae1; }
+.scan-paper i:nth-child(3n) { width: 60%; }
+.scan-paper i:nth-child(4n) { width: 80%; }
+.scan-line {
+  position: absolute; left: 0; right: 0; top: 4%; height: 3px;
+  background: var(--primary); box-shadow: 0 0 14px 4px var(--primary);
+  animation: scanMove 1.5s ease-in-out infinite alternate;
+}
+@keyframes scanMove { from { top: 4%; } to { top: 95%; } }
+.sc { position: absolute; width: 22px; height: 22px; border: 3px solid var(--primary); }
+.sc.tl { top: 8px; left: 8px; border-right: 0; border-bottom: 0; border-top-left-radius: 6px; }
+.sc.tr { top: 8px; right: 8px; border-left: 0; border-bottom: 0; border-top-right-radius: 6px; }
+.sc.bl { bottom: 8px; left: 8px; border-right: 0; border-top: 0; border-bottom-left-radius: 6px; }
+.sc.br { bottom: 8px; right: 8px; border-left: 0; border-top: 0; border-bottom-right-radius: 6px; }
+.scan-check {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(47, 125, 91, 0.88); color: #fff;
+}
+.scan-check .ic { width: 64px; height: 64px; stroke-width: 2.5; animation: popIn 0.3s ease; }
+.scan-modal.done .scan-check { display: flex; }
+.scan-modal.done .scan-line { display: none; }
+@media (prefers-reduced-motion: reduce) { .scan-line { animation: none; top: 50%; } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -434,6 +482,7 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></symbol>
         <symbol id="i-trend-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></symbol>
         <symbol id="i-trend-down" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></symbol>
+       <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
         <!-- ikon kategori -->
         <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
         <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></symbol>
@@ -674,8 +723,11 @@ input, select, textarea { min-width: 0; max-width: 100%; }
           <div class="image-box">
             <div id="image-preview"></div>
             <div class="img-actions">
-              <button type="button" class="btn" onclick="$('file-camera').click()"><svg class="ic ic-sm"><use href="#i-camera" /></svg><span data-i18n="camera"></span></button>
-              <button type="button" class="btn" onclick="$('file-gallery').click()"><svg class="ic ic-sm"><use href="#i-image" /></svg><span data-i18n="gallery"></span></button>
+                           <button type="button" class="btn btn-primary" id="scan-ai-btn" onclick="runScan()" style="display:none">
+                             <svg class="ic ic-sm"><use href="#i-scan" /></svg><span data-i18n="scan_ai_btn"></span>
+                           </button>
+                            <button type="button" class="btn" onclick="$('file-camera').click()"><svg class="ic ic-sm"><use href="#i-camera" /></svg><span data-i18n="camera"></span></button>
+                            <button type="button" class="btn" onclick="$('file-gallery').click()"><svg class="ic ic-sm"><use href="#i-image" /></svg><span data-i18n="gallery"></span></button>
               <button type="button" class="btn" onclick="$('file-pdf').click()"><svg class="ic ic-sm"><use href="#i-file" /></svg>PDF</button>
               <button type="button" class="btn btn-danger" id="remove-image-btn" onclick="removeImage()"><svg class="ic ic-sm"><use href="#i-trash" /></svg><span data-i18n="remove"></span></button>
             </div>
@@ -688,8 +740,17 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         </div>
       </div>
 
-      <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
+           <div class="scan-modal" id="scan-modal" role="dialog" aria-modal="true" aria-live="polite">
+               <div class="scan-card">
+                 <div class="scan-frame" id="scan-frame"></div>
+                 <h3 id="scan-modal-title"></h3>
+                 <p class="muted" id="scan-modal-sub"></p>
+                 <button type="button" class="btn btn-block" id="scan-cancel" onclick="cancelScan()" data-i18n="scan_cancel"></button>
+               </div>
+             </div>
+        
+              <div class="toast" id="toast" role="status" aria-live="polite"></div>
+              
       <!-- ===== BOTTOM NAV ===== -->
       <nav class="bottom-nav" id="main-nav">
         <button class="nav-item" data-view="history" onclick="switchView('history')">

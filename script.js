@@ -73,6 +73,14 @@ const I18N = {
     pay_ewallet: 'E-dompet (TNG, GrabPay)',
     pay_other: 'Lain-lain',
     csv_payment: 'Cara Bayar',
+    sec_payment: 'Cara pembayaran',
+    new_pay_ph: 'Cara pembayaran baharu',
+    need_pay_name: 'Sila isi nama cara pembayaran.',
+    pay_exists: 'Cara pembayaran itu sudah wujud.',
+    pay_added: 'Cara pembayaran ditambah.',
+    delete_pay_aria: 'Padam cara pembayaran',
+    confirm_del_pay_used: 'Cara pembayaran "{name}" digunakan oleh {used} resit (resit tidak akan dipadam). Teruskan?',
+    confirm_del_pay: 'Padam cara pembayaran "{name}"?',
     notes_label: 'Nota (pilihan)',
     camera: 'Kamera',
     remove: 'Buang',
@@ -218,6 +226,14 @@ const I18N = {
     pay_ewallet: 'E-wallet (TNG, GrabPay)',
     pay_other: 'Other',
     csv_payment: 'Payment',
+    sec_payment: 'Payment methods',
+    new_pay_ph: 'New payment method',
+    need_pay_name: 'Please enter a payment method name.',
+    pay_exists: 'That payment method already exists.',
+    pay_added: 'Payment method added.',
+    delete_pay_aria: 'Delete payment method',
+    confirm_del_pay_used: 'Payment method "{name}" is used by {used} receipt(s) (receipts will not be deleted). Continue?',
+    confirm_del_pay: 'Delete payment method "{name}"?',
     notes_label: 'Notes (optional)',
     camera: 'Camera',
     remove: 'Remove',
@@ -338,13 +354,21 @@ const CAT_ICONS = [
 ];
 
 const PAYMENT_METHODS = ['cash', 'debit', 'credit', 'transfer', 'ewallet', 'other'];
+let customPays = loadJSON('customPays', []); // nama tersuai disimpan sebagai teks biasa
+const allPays = () => [...PAYMENT_METHODS, ...customPays];
+// Lalai: terjemah ikut bahasa. Tersuai: papar nama asal.
 const payLabel = (k) => (k ? I18N[currentLang]['pay_' + k] ?? k : '');
 
 function fillPaymentSelect(selected) {
-  $('f-payment').innerHTML =
+  const f = $('f-payment');
+  f.innerHTML =
     `<option value="">${esc(t('pay_none'))}</option>` +
-    PAYMENT_METHODS.map((k) => `<option value="${k}">${esc(payLabel(k))}</option>`).join('');
-  $('f-payment').value = PAYMENT_METHODS.includes(selected) ? selected : '';
+    allPays().map((k) => `<option value="${esc(k)}">${esc(payLabel(k))}</option>`).join('');
+  // cara bayar tersuai yang sudah dipadam: papar juga supaya data tak hilang
+  if (selected && !allPays().includes(selected)) {
+    f.insertAdjacentHTML('beforeend', `<option value="${esc(selected)}">${esc(selected)}</option>`);
+  }
+  f.value = selected || '';
 }
 
 let currentUser = null;
@@ -490,6 +514,7 @@ function applyLang(lang) {
   renderHistory();
   renderDashboard();
   renderCategorySettings();
+  renderPaymentSettings();
   renderIconPicker();
   renderAccount();
   renderUserInfo();
@@ -506,6 +531,7 @@ function switchView(viewName) {
   if (viewName === 'dashboard') renderDashboard();
   if (viewName === 'settings') {
     renderCategorySettings();
+    renderPaymentSettings();
     renderIconPicker();
     renderAccount();
   }
@@ -1221,6 +1247,53 @@ function deleteCategory(index) {
   localStorage.setItem('customCats', JSON.stringify(customCats));
   fillCategorySelects($('f-category').value);
   renderCategorySettings();
+  renderHistory();
+}
+
+function renderPaymentSettings() {
+  const defaults = PAYMENT_METHODS.map(
+    (k) => `<div class="setting-row"><span class="lead">${esc(payLabel(k))}</span><span class="muted">${esc(t('default_tag'))}</span></div>`
+  ).join('');
+  const custom = customPays
+    .map(
+      (name, i) => `
+      <div class="setting-row">
+        <span class="lead">${esc(name)}</span>
+        <button class="del" onclick="deletePayment(${i})" aria-label="${esc(t('delete_pay_aria'))}">${ico('trash', 'ic-sm')}</button>
+      </div>`
+    )
+    .join('');
+  $('pay-settings-list').innerHTML = defaults + custom;
+}
+
+function addPayment() {
+  const name = $('new-pay-name').value.trim();
+  if (!name) return toast(t('need_pay_name'));
+  const lower = name.toLowerCase();
+  const exists =
+    PAYMENT_METHODS.some((k) => k === lower || payLabel(k).toLowerCase() === lower) ||
+    customPays.some((p) => p.toLowerCase() === lower);
+  if (exists) return toast(t('pay_exists'));
+  customPays.push(name);
+  localStorage.setItem('customPays', JSON.stringify(customPays));
+  $('new-pay-name').value = '';
+  fillPaymentSelect($('f-payment').value);
+  renderPaymentSettings();
+  toast(t('pay_added'));
+}
+
+function deletePayment(index) {
+  const name = customPays[index];
+  if (!name) return;
+  const used = receipts.filter((r) => r.payment_method === name).length;
+  const msg = used
+    ? t('confirm_del_pay_used', { name, used })
+    : t('confirm_del_pay', { name });
+  if (!confirm(msg)) return;
+  customPays.splice(index, 1);
+  localStorage.setItem('customPays', JSON.stringify(customPays));
+  fillPaymentSelect($('f-payment').value);
+  renderPaymentSettings();
   renderHistory();
 }
 

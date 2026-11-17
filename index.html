@@ -662,8 +662,19 @@ input, select, textarea { min-width: 0; max-width: 100%; }
             </div>
           </div>
 
-          <div class="section-title" data-i18n="sec_account"></div>
-          <div class="card" id="account-box"></div>
+                   <div class="section-title" data-i18n="sec_payment"></div>
+                   <div class="card">
+                    <div id="pay-settings-list"></div>
+                     <div class="cat-add">
+                       <div class="cat-add-row">
+                         <input type="text" id="new-pay-name" data-i18n-placeholder="new_pay_ph" maxlength="24" />
+                         <button class="btn btn-primary" onclick="addPayment()" data-i18n="add"></button>
+                       </div>
+                     </div>
+                   </div>
+          
+                    <div class="section-title" data-i18n="sec_account"></div>
+                    <div class="card" id="account-box"></div>
 
           <div class="section-title" data-i18n="sec_data"></div>
           <div class="card">

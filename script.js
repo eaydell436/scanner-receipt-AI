@@ -1665,7 +1665,7 @@ function renderCategorySettings() {
           : `<button class="del" onclick="deleteCategory(${ci})" aria-label="${esc(t('delete_cat_aria'))}">${ico('trash', 'ic-sm')}</button>`;
       return `
       <div class="setting-row sort-row" data-key="${esc(c.name)}">
-        <span class="lead"><span class="drag-handle" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(catIcon(c.name))}${esc(catLabel(c.name))}</span>
+        <span class="lead"><span class="drag-handle" style="touch-action:none" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(catIcon(c.name))}${esc(catLabel(c.name))}</span>
         ${right}
       </div>`;
     })
@@ -1721,7 +1721,7 @@ function renderPaymentSettings() {
           : `<button class="del" onclick="deletePayment(${ci})" aria-label="${esc(t('delete_pay_aria'))}">${ico('trash', 'ic-sm')}</button>`;
       return `
       <div class="setting-row sort-row" data-key="${esc(k)}">
-        <span class="lead"><span class="drag-handle" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(payIcon(k))}${esc(payLabel(k))}</span>
+        <span class="lead"><span class="drag-handle" style="touch-action:none" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(payIcon(k))}${esc(payLabel(k))}</span>
         ${right}
       </div>`;
     })
@@ -1914,94 +1914,114 @@ $('image-preview').addEventListener('click', (e) => {
   if (e.target.closest('img')) openViewer();
 });
 $('new-cat-picker').addEventListener('click', (e) => {
-
-  $('new-pay-picker').addEventListener('click', (e) => {
-    const btn = e.target.closest('.icon-opt');
-    if (!btn) return;
-    newPayIcon = btn.dataset.icon;
-    renderIconPicker();
-  });
-  
-  // Seret untuk susun: pegang ikon ⋮⋮ di kiri baris, kemudian gerak ke atas / bawah
-  function makeSortable(container, onReorder) {
-    container.addEventListener('contextmenu', (e) => {
-      if (e.target.closest('.drag-handle')) e.preventDefault();
-    });
-  
-    container.addEventListener('pointerdown', (e) => {
-      const handle = e.target.closest('.drag-handle');
-      if (!handle) return;
-      const rows = [...container.children].filter((r) => r.dataset.key !== undefined);
-      const row = handle.closest('[data-key]');
-      const from = rows.indexOf(row);
-      if (from < 0) return;
-  
-      e.preventDefault();
-      const rects = rows.map((r) => r.getBoundingClientRect());
-      const h = rects[from].height;
-      const startY = e.clientY;
-      let to = from;
-      row.classList.add('dragging');
-      handle.setPointerCapture(e.pointerId);
-  
-      const onMove = (ev) => {
-        const minDy = rects[0].top - rects[from].top;
-        const maxDy = rects[rects.length - 1].top - rects[from].top;
-        const dy = Math.min(maxDy, Math.max(minDy, ev.clientY - startY));
-        row.style.transform = `translateY(${dy}px)`;
-  
-        const center = rects[from].top + dy + h / 2;
-        to = rects.reduce((n, r, i) => n + (i !== from && r.top + r.height / 2 < center ? 1 : 0), 0);
-  
-        rows.forEach((r, i) => {
-          if (i === from) return;
-          let shift = 0;
-          if (from < to && i > from && i <= to) shift = -h;
-          else if (from > to && i >= to && i < from) shift = h;
-          r.style.transform = shift ? `translateY(${shift}px)` : '';
-        });
-      };
-  
-      const onEnd = (ev) => {
-        handle.removeEventListener('pointermove', onMove);
-        handle.removeEventListener('pointerup', onEnd);
-        handle.removeEventListener('pointercancel', onEnd);
-        rows.forEach((r) => {
-          r.style.transform = '';
-          r.classList.remove('dragging');
-        });
-        if (ev.type === 'pointerup' && to !== from) {
-          const keys = rows.map((r) => r.dataset.key);
-          keys.splice(to, 0, keys.splice(from, 1)[0]);
-          onReorder(keys);
-        }
-      };
-  
-      handle.addEventListener('pointermove', onMove);
-      handle.addEventListener('pointerup', onEnd);
-      handle.addEventListener('pointercancel', onEnd);
-    });
-  }
-  
-  makeSortable($('cat-settings-list'), (keys) => {
-    catOrder = keys;
-    localStorage.setItem('catOrder', JSON.stringify(keys));
-    fillCategorySelects($('f-category').value);
-    renderCategorySettings();
-  });
-  
-  makeSortable($('pay-settings-list'), (keys) => {
-    payOrder = keys;
-    localStorage.setItem('payOrder', JSON.stringify(keys));
-    fillPaymentSelect($('f-payment').value);
-    renderPaymentSettings();
-  });
-  
   const btn = e.target.closest('.icon-opt');
   if (!btn) return;
   newCatIcon = btn.dataset.icon;
   renderIconPicker();
 });
+
+$('new-pay-picker').addEventListener('click', (e) => {
+  const btn = e.target.closest('.icon-opt');
+  if (!btn) return;
+  newPayIcon = btn.dataset.icon;
+  renderIconPicker();
+});
+
+// Seret untuk susun: pegang ikon ⋮⋮ di kiri baris, kemudian gerak ke atas / bawah
+function makeSortable(container, onReorder) {
+  if (!container) return;
+
+  container.addEventListener('contextmenu', (e) => {
+    if (e.target.closest('.drag-handle')) e.preventDefault();
+  });
+
+  // Halang tatal halaman bila jari mula pada pemegang
+  container.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.target.closest('.drag-handle')) e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  container.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    const row = handle.closest('[data-key]');
+    if (!row) return;
+
+    const rows = [...container.querySelectorAll(':scope > [data-key]')];
+    const from = rows.indexOf(row);
+    if (from < 0) return;
+
+    e.preventDefault();
+    const pid = e.pointerId;
+    const rects = rows.map((r) => r.getBoundingClientRect());
+    const h = rects[from].height;
+    const startY = e.clientY;
+    let to = from;
+    row.classList.add('dragging');
+
+    const stopScroll = (ev) => ev.preventDefault();
+
+    const onMove = (ev) => {
+      if (ev.pointerId !== pid) return;
+      const minDy = rects[0].top - rects[from].top;
+      const maxDy = rects[rects.length - 1].top - rects[from].top;
+      const dy = Math.min(maxDy, Math.max(minDy, ev.clientY - startY));
+      row.style.transform = `translateY(${dy}px)`;
+
+      const center = rects[from].top + dy + h / 2;
+      to = rects.reduce((n, r, i) => n + (i !== from && r.top + r.height / 2 < center ? 1 : 0), 0);
+
+      rows.forEach((r, i) => {
+        if (i === from) return;
+        let shift = 0;
+        if (from < to && i > from && i <= to) shift = -h;
+        else if (from > to && i >= to && i < from) shift = h;
+        r.style.transform = shift ? `translateY(${shift}px)` : '';
+      });
+    };
+
+    const onEnd = (ev) => {
+      if (ev.pointerId !== pid) return;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onEnd);
+      document.removeEventListener('pointercancel', onEnd);
+      document.removeEventListener('touchmove', stopScroll);
+      rows.forEach((r) => {
+        r.style.transform = '';
+        r.classList.remove('dragging');
+      });
+      if (ev.type === 'pointerup' && to !== from) {
+        const keys = rows.map((r) => r.dataset.key);
+        keys.splice(to, 0, keys.splice(from, 1)[0]);
+        onReorder(keys);
+      }
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onEnd);
+    document.addEventListener('pointercancel', onEnd);
+    document.addEventListener('touchmove', stopScroll, { passive: false });
+  });
+}
+
+makeSortable($('cat-settings-list'), (keys) => {
+  catOrder = keys;
+  localStorage.setItem('catOrder', JSON.stringify(keys));
+  fillCategorySelects($('f-category').value);
+  renderCategorySettings();
+});
+
+makeSortable($('pay-settings-list'), (keys) => {
+  payOrder = keys;
+  localStorage.setItem('payOrder', JSON.stringify(keys));
+  fillPaymentSelect($('f-payment').value);
+  renderPaymentSettings();
+});
+
 $('search-input').addEventListener('input', renderHistory);
 $('filter-cat').addEventListener('change', renderHistory);
 $('date-from').addEventListener('change', renderDashboard);

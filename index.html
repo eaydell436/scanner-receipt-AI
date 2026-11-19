@@ -672,7 +672,8 @@ input, select, textarea { min-width: 0; max-width: 100%; }
             </div>
           </div>
 
-          <section class="upload-area" id="scan-btn" onclick="$('file-camera').click()">
+          <section class="upload-area" id="scan-btn" onclick="requireLogin() && $('file-camera').click()">
+            
             <div class="upload-circle">
               <svg class="ic ic-xl"><use href="#i-camera" /></svg>
             </div>
@@ -684,10 +685,12 @@ input, select, textarea { min-width: 0; max-width: 100%; }
             <button class="action-btn" onclick="openSheet()">
               <svg class="ic ic-lg"><use href="#i-pencil" /></svg><span data-i18n="manual"></span>
             </button>
-            <button class="action-btn" onclick="$('file-gallery').click()">
+            <button class="action-btn" onclick="requireLogin() && $('file-gallery').click()">
+              
               <svg class="ic ic-lg"><use href="#i-image" /></svg><span data-i18n="gallery"></span>
             </button>
-            <button class="action-btn" onclick="$('file-pdf').click()">
+            <button class="action-btn" onclick="requireLogin() && $('file-pdf').click()">
+              
               <svg class="ic ic-lg"><use href="#i-file" /></svg><span>PDF</span>
             </button>
           </div>

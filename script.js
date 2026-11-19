@@ -155,12 +155,14 @@ const I18N = {
     csv_notes: 'Nota',
     csv_image: 'Pautan Gambar',
     acc_status: 'Status',
-    acc_guest: 'Tetamu (data pada peranti ini sahaja)',
+    acc_guest: 'Belum log masuk (tiada data disimpan)',
     acc_pending: 'Menunggu pengesahan untuk <b>{email}</b>. Semak e-mel anda dan klik pautan.',
     email_ph: 'E-mel anda',
-    link_btn: 'Simpan akaun (kekalkan data)',
+    link_btn: 'Hantar pautan log masuk',
     send_link_btn: 'Dah ada akaun? Hantar pautan log masuk',
-    no_pwd_note: 'Tiada kata laluan diperlukan. Kami hantar pautan ke e-mel anda.',
+    no_pwd_note: 'Tiada kata laluan diperlukan. Akaun baharu dicipta automatik jika e-mel belum berdaftar.',
+    need_login: 'Sila log masuk dengan e-mel dahulu untuk menyimpan resit.',
+    empty_login: 'Sila log masuk dengan e-mel di Tetapan untuk melihat dan menyimpan resit.',
     signed_in_as: 'Log masuk sebagai',
     logout: 'Log keluar',
     invalid_email: 'Sila isi e-mel yang sah.',
@@ -327,12 +329,14 @@ const I18N = {
     csv_notes: 'Notes',
     csv_image: 'Image Link',
     acc_status: 'Status',
-    acc_guest: 'Guest (data on this device only)',
+    acc_guest: 'Not signed in (nothing is saved)',
     acc_pending: 'Waiting for confirmation of <b>{email}</b>. Check your email and click the link.',
     email_ph: 'Your email',
-    link_btn: 'Save account (keep data)',
+    link_btn: 'Send login link',
     send_link_btn: 'Already have an account? Send login link',
-    no_pwd_note: 'No password needed. We will send a link to your email.',
+    no_pwd_note: 'No password needed. A new account is created automatically if the email is not registered.',
+    need_login: 'Please sign in with email first to save receipts.',
+    empty_login: 'Sign in with email in Settings to view and save receipts.',
     signed_in_as: 'Signed in as',
     logout: 'Sign out',
     invalid_email: 'Please enter a valid email.',
@@ -350,14 +354,23 @@ const I18N = {
 
 // Nama kategori lalai disimpan dalam DB dalam bentuk asal; hanya paparan diterjemah
 const CAT_LABELS = {
-  'F&B': { ms: 'Makanan & Minuman', en: 'F&B' },
-  Utility: { ms: 'Utiliti', en: 'Utility' },
-  Accommodation: { ms: 'Penginapan', en: 'Accommodation' },
-  Transportation: { ms: 'Pengangkutan', en: 'Transportation' },
-  Shopping: { ms: 'Membeli-belah', en: 'Shopping' },
-  Medical: { ms: 'Perubatan', en: 'Medical' },
-  Gaji: { ms: 'Gaji', en: 'Salary' },
-  'Lain-lain': { ms: 'Lain-lain', en: 'Others' },
+  'Gaji': { en: 'Salary' },
+  'Pendapatan Lain': { en: 'Other Income' },
+  'Penjagaan Ibu Bapa': { en: 'Parents Care' },
+  'Makanan & Minuman': { en: 'Food & Drinks' },
+  'Rumah Tangga': { en: 'Household' },
+  'Pengangkutan': { en: 'Transportation' },
+  'Kenderaan & Servis': { en: 'Vehicle & Service' },
+  'Utiliti & Internet': { en: 'Utilities & Internet' },
+  'Gaya Hidup': { en: 'Lifestyle' },
+  'Perubatan & Kesihatan': { en: 'Medical & Health' },
+  'Anak & Tanggungan': { en: 'Children & Dependents' },
+  'Sukan Tambahan': { en: 'Sports & Extras' },
+  'Insuran & Persaraan': { en: 'Insurance & Retirement' },
+  'Pinjaman Rumah': { en: 'Home Loan' },
+  'SSPN & Simpanan': { en: 'SSPN & Savings' },
+  'Pelancongan': { en: 'Travel' },
+  'Pendidikan & Kemahiran': { en: 'Education & Skills' },
 };
 
 let currentLang = localStorage.getItem('lang') === 'en' ? 'en' : 'ms';
@@ -378,15 +391,26 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Ikon kategori ialah nama simbol dalam sprite SVG (index.html), contoh 'utensils' -> #i-utensils
 const DEFAULT_CATS = [
-  { name: 'F&B', icon: 'utensils' },
-  { name: 'Utility', icon: 'receipt' },
-  { name: 'Accommodation', icon: 'bed' },
-  { name: 'Transportation', icon: 'car' },
-  { name: 'Shopping', icon: 'bag' },
-  { name: 'Medical', icon: 'heart-pulse' },
   { name: 'Gaji', icon: 'wallet' },
-  { name: 'Lain-lain', icon: 'package' },
+  { name: 'Pendapatan Lain', icon: 'receipt' },
+  { name: 'Penjagaan Ibu Bapa', icon: 'heart-pulse' },
+  { name: 'Makanan & Minuman', icon: 'utensils' },
+  { name: 'Rumah Tangga', icon: 'home' },
+  { name: 'Pengangkutan', icon: 'car' },
+  { name: 'Kenderaan & Servis', icon: 'car' },
+  { name: 'Utiliti & Internet', icon: 'receipt' },
+  { name: 'Gaya Hidup', icon: 'bag' },
+  { name: 'Perubatan & Kesihatan', icon: 'heart-pulse' },
+  { name: 'Anak & Tanggungan', icon: 'package' },
+  { name: 'Sukan Tambahan', icon: 'heart-pulse' },
+  { name: 'Insuran & Persaraan', icon: 'package' },
+  { name: 'Pinjaman Rumah', icon: 'home' },
+  { name: 'SSPN & Simpanan', icon: 'receipt' },
+  { name: 'Pelancongan', icon: 'plane' },
+  { name: 'Pendidikan & Kemahiran', icon: 'package' },
 ];
+const FALLBACK_CAT = 'Anak & Tanggungan'; // ganti 'Lain-lain'
+
 const CAT_ICONS = [
   'utensils', 'receipt', 'bed', 'car', 'bag', 'heart-pulse', 'wallet', 'package', 'tag',
   'coffee', 'home', 'zap', 'plane', 'gift', 'book', 'phone', 'briefcase',
@@ -496,8 +520,46 @@ function toast(msg) {
 
 let catOrder = loadJSON('catOrder', []);
 
+const LEGACY_CATS = {
+  'F&B': 'Makanan & Minuman',
+  Utility: 'Utiliti & Internet',
+  Accommodation: 'Pelancongan',
+  Transportation: 'Pengangkutan',
+  Shopping: 'Gaya Hidup',
+  Medical: 'Perubatan & Kesihatan',
+  'Lain-lain': 'Anak & Tanggungan',
+};
+
+// Sekali sahaja: bersihkan localStorage
+if (!localStorage.getItem('catsV2')) {
+  const defNames = DEFAULT_CATS.map((c) => c.name);
+  customCats = customCats.filter((c) => !defNames.includes(c.name));
+  catOverrides = {};
+  catOrder = [];
+  localStorage.setItem('customCats', JSON.stringify(customCats));
+  localStorage.setItem('catOverrides', '{}');
+  localStorage.setItem('catOrder', '[]');
+}
+
+// Sekali sahaja selepas log masuk: kemas kini resit lama dalam Supabase
+async function migrateCategories() {
+  if (localStorage.getItem('catsV2') || !currentUser) return;
+  try {
+    for (const [oldName, newName] of Object.entries(LEGACY_CATS)) {
+      const { error } = await supabaseClient
+        .from('receipts').update({ category: newName })
+        .eq('category', oldName).eq('user_id', currentUser.id);
+      if (error) throw error;
+    }
+    localStorage.setItem('catsV2', '1');
+  } catch (e) {
+    console.warn('Migrasi kategori gagal:', e); // dicuba semula pada muat semula
+  }
+}
+
 // Susun mengikut senarai kunci yang disimpan; item baharu diletak di hujung
 function sortByOrder(list, order, keyFn) {
+  
   const pos = new Map(order.map((k, i) => [k, i]));
   const rank = (x, i) => (pos.has(keyFn(x)) ? pos.get(keyFn(x)) : 1e6 + i);
   return list
@@ -521,21 +583,37 @@ function renderUserInfo() {
   $('user-info').textContent = currentUser ? t('user_id', { id: currentUser.id.slice(0, 8) + '…' }) : '';
 }
 
+const isLoggedIn = () => !!currentUser && !currentUser.is_anonymous;
+
+function requireLogin() {
+  if (isLoggedIn()) return true;
+  toast(t('need_login'));
+  switchView('settings');
+  return false;
+}
+
 async function initAuth() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
+    if (session && !session.user.is_anonymous) {
       currentUser = session.user;
     } else {
-      const { data, error } = await supabaseClient.auth.signInAnonymously();
-      if (error) throw error;
-      currentUser = data.user;
+      // buang sesi tetamu lama; JANGAN cipta sesi anonymous baharu
+      if (session) await supabaseClient.auth.signOut({ scope: 'local' });
+      currentUser = null;
     }
+    receipts = [];
     renderUserInfo();
     renderAccount();
-    await fetchReceipts();
+    if (currentUser) {
+      await migrateCategories();
+      await fetchReceipts();
+    } else {
+      renderHistory();
+      renderDashboard();
+    }
   } catch (err) {
-    console.error('Gagal log masuk:', err);
+    console.error('Gagal semak sesi:', err);
     toast(t('db_error', { msg: err.message }));
   }
 }
@@ -613,7 +691,9 @@ function switchView(viewName) {
 }
 
 function triggerScan() {
+  if (!requireLogin()) return;
   switchView('upload');
+  
   $('file-camera').click();
 }
 
@@ -621,7 +701,8 @@ function triggerScan() {
 // 4. DATA (SUPABASE)
 // ==========================================
 async function fetchReceipts() {
-  if (!currentUser) return;
+  if (!isLoggedIn()) { receipts = []; renderHistory(); renderDashboard(); return; }
+  
   const { data, error } = await supabaseClient
     .from('receipts')
     .select('*')
@@ -668,7 +749,9 @@ function setType(type) {
 }
 
 function openSheet(id = null, file = null) {
+  if (!requireLogin()) return;
   cancelScan();
+  
   editingId = id;
   pendingFile = null;
   removeImageFlag = false;
@@ -681,7 +764,8 @@ function openSheet(id = null, file = null) {
   $('f-amount').value = r ? r.total_amount : '';
   $('f-date').value = r?.receipt_date || todayStr();
   $('f-notes').value = r?.notes || '';
-  fillCategorySelects(r?.category || 'Lain-lain');
+  fillCategorySelects(r?.category || FALLBACK_CAT);
+  
   fillPaymentSelect(r?.payment_method || '');
 
   if (file) setPendingFile(file);
@@ -876,6 +960,8 @@ function closeViewer() {
 // Pengguna perlu tekan butang "Imbas AI" secara manual.
 function handleFile(file) {
   if (!file) return;
+  if (!requireLogin()) return;
+  
   if (file.size > 10 * 1024 * 1024) {
     toast(t('file_too_big'));
     return;
@@ -1021,7 +1107,8 @@ function finishScan(token, doneToast) {
 // Butang "Imbas AI"
 async function runScan() {
   if ($('scan-modal').classList.contains('open')) return;
-  if (!currentUser) return toast(t('no_session'));
+  if (!requireLogin()) return;
+  
   if (!$('sheet').classList.contains('open')) return;
 
   const token = ++scanToken;
@@ -1238,12 +1325,12 @@ function findPayment(text) {
 }
 
 const CAT_HINTS = [
-  ['Transportation', /petronas|shell|petron|caltex|bhp|setel|touch\s*'?n\s*go|\btol\b|parking|parkir|\bgrab\b|\blrt\b|\bmrt\b|\bktm\b|fuel|minyak/i],
-  ['F&B', /restoran|restaurant|cafe|kafe|kopitiam|mamak|nasi|mcd|mcdonald|kfc|starbucks|pizza|bakery|bubble|coffee|makan/i],
-  ['Utility', /tenaga|\btnb\b|syabas|air selangor|indah water|unifi|maxis|celcom|\bdigi\b|u mobile|telekom|astro/i],
-  ['Accommodation', /hotel|resort|\binn\b|homestay|airbnb|motel/i],
-  ['Medical', /klinik|clinic|pharmacy|farmasi|guardian|watsons?|hospital|dental|pergigian/i],
-  ['Shopping', /mydin|aeon|giant|tesco|lotus|99\s*speedmart|ikea|uniqlo|mr\.?\s*diy|econsave|jaya grocer|7-?eleven|kk\s*mart|shopee|lazada/i],
+  ['Pengangkutan', /petronas|shell|petron|caltex|bhp|setel|touch\s*'?n\s*go|\btol\b|parking|parkir|\bgrab\b|\blrt\b|\bmrt\b|\bktm\b|fuel|minyak/i],
+  ['Makanan & Minuman', /restoran|restaurant|cafe|kafe|kopitiam|mamak|nasi|mcd|mcdonald|kfc|starbucks|pizza|bakery|bubble|coffee|makan/i],
+  ['Utiliti & Internet', /tenaga|\btnb\b|syabas|air selangor|indah water|unifi|maxis|celcom|\bdigi\b|u mobile|telekom|astro/i],
+  ['Pelancongan', /hotel|resort|\binn\b|homestay|airbnb|motel/i],
+  ['Perubatan & Kesihatan', /klinik|clinic|pharmacy|farmasi|guardian|watsons?|hospital|dental|pergigian/i],
+  ['Gaya Hidup', /mydin|aeon|giant|tesco|lotus|99\s*speedmart|ikea|uniqlo|mr\.?\s*diy|econsave|jaya grocer|7-?eleven|kk\s*mart|shopee|lazada/i],
 ];
 
 function parseReceiptText(text) {
@@ -1316,7 +1403,7 @@ async function saveReceipt() {
   if (!merchant) return toast(t('need_merchant'));
   if (isNaN(amount) || amount < 0) return toast(t('need_amount'));
   if (!date) return toast(t('need_date'));
-  if (!currentUser) return toast(t('not_logged_in'));
+  if (!requireLogin()) return;
 
   const btn = $('save-btn');
   btn.disabled = true;
@@ -1418,7 +1505,9 @@ function renderHistory() {
   const box = $('receipt-list');
 
   if (list.length === 0) {
-    box.innerHTML = `<p class="empty-msg">${esc(receipts.length ? t('empty_nomatch') : t('empty_none'))}</p>`;
+    const msg = !isLoggedIn() ? t('empty_login') : receipts.length ? t('empty_nomatch') : t('empty_none');
+    box.innerHTML = `<p class="empty-msg">${esc(msg)}</p>`;
+    
     return;
   }
 
@@ -1455,8 +1544,9 @@ function renderDashboard() {
     if (r.type === 'income') income += amt;
     else {
       expense += amt;
-      const k = r.category || 'Lain-lain';
+      const k = r.category || FALLBACK_CAT;
       byCat[k] = (byCat[k] || 0) + amt;
+      
       const p = r.payment_method || ''; // '' = tidak dinyatakan
       byPay[p] = (byPay[p] || 0) + amt;
     }
@@ -1517,8 +1607,9 @@ function getChartRanges() {
       if (x.type === 'income') return;
       if (from && x.receipt_date < from) return;
       if (to && x.receipt_date > to) return;
-      const k = x.category || 'Lain-lain';
+      const k = x.category || FALLBACK_CAT;
       totals[k] = (totals[k] || 0) + (parseFloat(x.total_amount) || 0);
+    
     });
 
     const dates =
@@ -1957,24 +2048,17 @@ const isValidEmail = (e) => /^\S+@\S+\.\S+$/.test(e);
 
 function renderAccount() {
   const box = $('account-box');
-  if (!box || !currentUser) return;
-
-  // Kekalkan e-mel yang sedang ditaip bila bahasa ditukar
+  if (!box) return;
   const typed = $('acc-email')?.value || '';
 
-  if (currentUser.is_anonymous) {
-    const pending = currentUser.new_email
-      ? `<p class="acc-note">${ico('clock', 'ic-sm')}<span>${t('acc_pending', { email: esc(currentUser.new_email) })}</span></p>`
-      : '';
+  if (!isLoggedIn()) {
     box.innerHTML = `
       <div class="setting-row">
         <span class="lead">${ico('user')}${esc(t('acc_status'))}</span><span class="muted">${esc(t('acc_guest'))}</span>
       </div>
-      ${pending}
       <div class="acc-form">
         <input type="email" id="acc-email" placeholder="${esc(t('email_ph'))}" autocomplete="email" />
-        <button class="btn btn-primary" onclick="linkAccount()">${esc(t('link_btn'))}</button>
-        <button class="btn" onclick="sendLoginLink()">${esc(t('send_link_btn'))}</button>
+        <button class="btn btn-primary" onclick="loginWithEmail()">${esc(t('link_btn'))}</button>
       </div>
       <p class="acc-note">${esc(t('no_pwd_note'))}</p>`;
     if (typed) $('acc-email').value = typed;
@@ -1990,34 +2074,15 @@ function renderAccount() {
   }
 }
 
-// Tukar akaun tetamu kepada akaun e-mel (data sedia ada KEKAL)
-async function linkAccount() {
+// Log masuk / daftar dengan pautan e-mel (akaun baharu dicipta jika belum ada)
+async function loginWithEmail() {
   const email = $('acc-email').value.trim();
   if (!isValidEmail(email)) return toast(t('invalid_email'));
-  const { error } = await supabaseClient.auth.updateUser({ email }, { emailRedirectTo: REDIRECT_URL });
-  if (error) {
-    const exists = /already|registered|exists/i.test(error.message);
-    return toast(exists ? t('email_exists') : t('failed', { msg: error.message }));
-  }
-  const { data } = await supabaseClient.auth.getUser();
-  if (data?.user) currentUser = data.user;
-  renderAccount();
-  toast(t('confirm_sent'));
-}
-
-// Untuk peranti baharu: log masuk ke akaun sedia ada
-async function sendLoginLink() {
-  const email = $('acc-email').value.trim();
-  if (!isValidEmail(email)) return toast(t('invalid_email'));
-  if (receipts.length && !confirm(t('confirm_diff_account'))) return;
   const { error } = await supabaseClient.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: REDIRECT_URL, shouldCreateUser: false },
+    options: { emailRedirectTo: REDIRECT_URL, shouldCreateUser: true },
   });
-  if (error) {
-    const notFound = /signups not allowed|not found/i.test(error.message);
-    return toast(notFound ? t('account_not_found') : t('failed', { msg: error.message }));
-  }
+  if (error) return toast(t('failed', { msg: error.message }));
   toast(t('login_sent'));
 }
 
@@ -2031,16 +2096,25 @@ async function signOutAccount() {
 supabaseClient.auth.onAuthStateChange((event, session) => {
   // elak await panggilan Supabase terus dalam callback
   setTimeout(async () => {
-    if (!session?.user) return;
+    // sesi anonymous dianggap belum log masuk
+    if (!session?.user || session.user.is_anonymous) {
+      if (event === 'SIGNED_OUT') {
+        currentUser = null;
+        receipts = [];
+        renderAccount();
+        renderUserInfo();
+        renderHistory();
+        renderDashboard();
+      }
+      return;
+    }
     const changed = currentUser?.id !== session.user.id;
     currentUser = session.user;
     renderAccount();
     renderUserInfo();
-    if (changed && event !== 'INITIAL_SESSION') {
+    if (changed) {
       await fetchReceipts();
-      toast(t('login_ok'));
-    } else if (event === 'USER_UPDATED' && !session.user.is_anonymous) {
-      toast(t('email_verified'));
+      if (event !== 'INITIAL_SESSION') toast(t('login_ok'));
     }
   }, 0);
 });

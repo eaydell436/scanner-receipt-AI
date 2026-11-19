@@ -496,6 +496,20 @@ input, select, textarea { min-width: 0; max-width: 100%; }
   transform-origin: 50% 50%; will-change: transform;
 }
 
+/* ================= SUSUN DENGAN SERET ================= */
+.drag-handle {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 8px 6px; margin: -8px 0 -8px -6px;
+  color: var(--text-muted); cursor: grab;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.sort-row { position: relative; background: var(--bg-card); transition: transform 0.15s ease; }
+.sort-row.dragging {
+  z-index: 5; transition: none; cursor: grabbing;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2); border-radius: 8px;
+}
+.sort-row.dragging .drag-handle { cursor: grabbing; }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -528,6 +542,11 @@ input, select, textarea { min-width: 0; max-width: 100%; }
         <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
        <symbol id="i-expand" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></symbol>
        <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+        <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></symbol>
+        <symbol id="i-credit-card" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></symbol>
+        <symbol id="i-banknote" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+        <symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></symbol>
+        
         <!-- ikon kategori -->
         <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
         <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></symbol>
@@ -710,10 +729,11 @@ input, select, textarea { min-width: 0; max-width: 100%; }
                    <div class="section-title" data-i18n="sec_payment"></div>
                    <div class="card">
                     <div id="pay-settings-list"></div>
-                     <div class="cat-add">
-                       <div class="cat-add-row">
-                         <input type="text" id="new-pay-name" data-i18n-placeholder="new_pay_ph" maxlength="24" />
-                         <button class="btn btn-primary" onclick="addPayment()" data-i18n="add"></button>
+                    <div class="cat-add">
+                      <div class="icon-picker" id="new-pay-picker"></div>
+                      <div class="cat-add-row">
+                        <input type="text" id="new-pay-name" data-i18n-placeholder="new_pay_ph" maxlength="24" />
+                        <button class="btn btn-primary" onclick="addPayment()" data-i18n="add"></button>
                        </div>
                      </div>
                    </div>

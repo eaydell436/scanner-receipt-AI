@@ -104,6 +104,7 @@ const I18N = {
     zoom_in: 'Zum masuk',
     zoom_out: 'Zum keluar',
     zoom_reset: 'Set semula',
+    drag_hint: 'Seret untuk susun',
     scan_basic_btn: 'Imbas Asas',
     scanning_basic_title: 'Mengimbas (asas)...',
     basic_loading: 'Memuatkan enjin imbasan (kali pertama agak lama)...',
@@ -270,6 +271,7 @@ const I18N = {
     zoom_in: 'Zoom in',
     zoom_out: 'Zoom out',
     zoom_reset: 'Reset',
+    drag_hint: 'Drag to reorder',
     scan_basic_btn: 'Basic Scan',
     scanning_basic_title: 'Scanning (basic)...',
     basic_loading: 'Loading scan engine (slow the first time)...',
@@ -377,11 +379,30 @@ const DEFAULT_CATS = [
 const CAT_ICONS = [
   'utensils', 'receipt', 'bed', 'car', 'bag', 'heart-pulse', 'wallet', 'package', 'tag',
   'coffee', 'home', 'zap', 'plane', 'gift', 'book', 'phone', 'briefcase',
+  'credit-card', 'banknote', 'landmark',
 ];
 
 const PAYMENT_METHODS = ['cash', 'debit', 'credit', 'transfer', 'ewallet', 'other'];
-let customPays = loadJSON('customPays', []); // nama tersuai disimpan sebagai teks biasa
-const allPays = () => [...PAYMENT_METHODS, ...customPays];
+const PAY_ICONS = {
+  cash: 'banknote', debit: 'credit-card', credit: 'credit-card',
+  transfer: 'landmark', ewallet: 'phone', other: 'package',
+};
+// Tersuai: [{ name, icon }]. Versi lama simpan teks sahaja, ditukar automatik.
+let customPays = loadJSON('customPays', []).map((p) =>
+  typeof p === 'string' ? { name: p, icon: 'tag' } : p
+);
+let payOrder = loadJSON('payOrder', []);
+let newPayIcon = 'tag';
+
+// Pulang senarai kunci (lalai + nama tersuai) mengikut susunan pengguna
+const allPays = () =>
+  sortByOrder([...PAYMENT_METHODS, ...customPays.map((p) => p.name)], payOrder, (k) => k);
+
+const payIcon = (k) => {
+  const icon = PAY_ICONS[k] || customPays.find((p) => p.name === k)?.icon;
+  return CAT_ICONS.includes(icon) ? icon : 'tag';
+};
+
 // Lalai: terjemah ikut bahasa. Tersuai: papar nama asal.
 const payLabel = (k) => (k ? I18N[currentLang]['pay_' + k] ?? k : '');
 
@@ -459,7 +480,20 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
-const allCats = () => [...DEFAULT_CATS, ...customCats];
+let catOrder = loadJSON('catOrder', []);
+
+// Susun mengikut senarai kunci yang disimpan; item baharu diletak di hujung
+function sortByOrder(list, order, keyFn) {
+  const pos = new Map(order.map((k, i) => [k, i]));
+  const rank = (x, i) => (pos.has(keyFn(x)) ? pos.get(keyFn(x)) : 1e6 + i);
+  return list
+    .map((x, i) => ({ x, r: rank(x, i) }))
+    .sort((a, b) => a.r - b.r)
+    .map((o) => o.x);
+}
+
+const allCats = () => sortByOrder([...DEFAULT_CATS, ...customCats], catOrder, (c) => c.name);
+
 // Kategori lama yang masih guna emoji (disimpan dalam localStorage) akan dipaparkan sebagai ikon 'tag'
 const catIcon = (name) => {
   const icon = allCats().find((c) => c.name === name)?.icon;
@@ -1178,8 +1212,8 @@ function findMerchant(lines) {
 
 function findPayment(text) {
   const low = text.toLowerCase();
-  const custom = customPays.find((p) => low.includes(p.toLowerCase()));
-  if (custom) return custom;
+  const custom = customPays.find((p) => low.includes(p.name.toLowerCase()));
+  if (custom) return custom.name;
   if (/touch\s*'?n\s*go|\btng\b|grabpay|boost|shopeepay|e-?wallet|bigpay/.test(low)) return 'ewallet';
   if (/visa|master\s*card|mastercard|credit/.test(low)) return 'credit';
   if (/debit/.test(low)) return 'debit';
@@ -1501,7 +1535,7 @@ function renderChart() {
   Chart.defaults.font.family = "'IBM Plex Sans', system-ui, sans-serif";
 
   const colorOf = (name) => {
-    const i = allCats().findIndex((c) => c.name === name);
+    const i = [...DEFAULT_CATS, ...customCats].findIndex((c) => c.name === name);
     return CHART_COLORS[(i < 0 ? cats.indexOf(name) : i) % CHART_COLORS.length];
   };
   const addChart = (height, config) => {
@@ -1622,25 +1656,29 @@ function renderChart() {
 // 7. TETAPAN: KATEGORI, CSV, PADAM SEMUA
 // ==========================================
 function renderCategorySettings() {
-  const defaults = DEFAULT_CATS.map(
-    (c) => `<div class="setting-row"><span class="lead">${ico(catIcon(c.name))}${esc(catLabel(c.name))}</span><span class="muted">${esc(t('default_tag'))}</span></div>`
-  ).join('');
-  const custom = customCats
-    .map(
-      (c, i) => `
-      <div class="setting-row">
-        <span class="lead">${ico(catIcon(c.name))}${esc(c.name)}</span>
-        <button class="del" onclick="deleteCategory(${i})" aria-label="${esc(t('delete_cat_aria'))}">${ico('trash', 'ic-sm')}</button>
-      </div>`
-    )
+  $('cat-settings-list').innerHTML = allCats()
+    .map((c) => {
+      const ci = customCats.indexOf(c);
+      const right =
+        ci < 0
+          ? `<span class="muted">${esc(t('default_tag'))}</span>`
+          : `<button class="del" onclick="deleteCategory(${ci})" aria-label="${esc(t('delete_cat_aria'))}">${ico('trash', 'ic-sm')}</button>`;
+      return `
+      <div class="setting-row sort-row" data-key="${esc(c.name)}">
+        <span class="lead"><span class="drag-handle" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(catIcon(c.name))}${esc(catLabel(c.name))}</span>
+        ${right}
+      </div>`;
+    })
     .join('');
-  $('cat-settings-list').innerHTML = defaults + custom;
 }
 
 function renderIconPicker() {
-  $('new-cat-picker').innerHTML = CAT_ICONS.map(
-    (n) => `<button type="button" class="icon-opt${n === newCatIcon ? ' active' : ''}" data-icon="${n}" aria-label="${esc(t('icon_aria', { n }))}" aria-pressed="${n === newCatIcon}">${ico(n)}</button>`
-  ).join('');
+  const make = (selected) =>
+    CAT_ICONS.map(
+      (n) => `<button type="button" class="icon-opt${n === selected ? ' active' : ''}" data-icon="${n}" aria-label="${esc(t('icon_aria', { n }))}" aria-pressed="${n === selected}">${ico(n)}</button>`
+    ).join('');
+  $('new-cat-picker').innerHTML = make(newCatIcon);
+  $('new-pay-picker').innerHTML = make(newPayIcon);
 }
 
 function addCategory() {
@@ -1674,19 +1712,20 @@ function deleteCategory(index) {
 }
 
 function renderPaymentSettings() {
-  const defaults = PAYMENT_METHODS.map(
-    (k) => `<div class="setting-row"><span class="lead">${esc(payLabel(k))}</span><span class="muted">${esc(t('default_tag'))}</span></div>`
-  ).join('');
-  const custom = customPays
-    .map(
-      (name, i) => `
-      <div class="setting-row">
-        <span class="lead">${esc(name)}</span>
-        <button class="del" onclick="deletePayment(${i})" aria-label="${esc(t('delete_pay_aria'))}">${ico('trash', 'ic-sm')}</button>
-      </div>`
-    )
+  $('pay-settings-list').innerHTML = allPays()
+    .map((k) => {
+      const ci = customPays.findIndex((p) => p.name === k);
+      const right =
+        ci < 0
+          ? `<span class="muted">${esc(t('default_tag'))}</span>`
+          : `<button class="del" onclick="deletePayment(${ci})" aria-label="${esc(t('delete_pay_aria'))}">${ico('trash', 'ic-sm')}</button>`;
+      return `
+      <div class="setting-row sort-row" data-key="${esc(k)}">
+        <span class="lead"><span class="drag-handle" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(payIcon(k))}${esc(payLabel(k))}</span>
+        ${right}
+      </div>`;
+    })
     .join('');
-  $('pay-settings-list').innerHTML = defaults + custom;
 }
 
 function addPayment() {
@@ -1695,19 +1734,22 @@ function addPayment() {
   const lower = name.toLowerCase();
   const exists =
     PAYMENT_METHODS.some((k) => k === lower || payLabel(k).toLowerCase() === lower) ||
-    customPays.some((p) => p.toLowerCase() === lower);
+    customPays.some((p) => p.name.toLowerCase() === lower);
   if (exists) return toast(t('pay_exists'));
-  customPays.push(name);
+  customPays.push({ name, icon: newPayIcon });
   localStorage.setItem('customPays', JSON.stringify(customPays));
   $('new-pay-name').value = '';
+  newPayIcon = 'tag';
+  renderIconPicker();
   fillPaymentSelect($('f-payment').value);
   renderPaymentSettings();
   toast(t('pay_added'));
 }
 
 function deletePayment(index) {
-  const name = customPays[index];
-  if (!name) return;
+  const item = customPays[index];
+  if (!item) return;
+  const name = item.name;
   const used = receipts.filter((r) => r.payment_method === name).length;
   const msg = used
     ? t('confirm_del_pay_used', { name, used })
@@ -1872,6 +1914,88 @@ $('image-preview').addEventListener('click', (e) => {
   if (e.target.closest('img')) openViewer();
 });
 $('new-cat-picker').addEventListener('click', (e) => {
+
+  $('new-pay-picker').addEventListener('click', (e) => {
+    const btn = e.target.closest('.icon-opt');
+    if (!btn) return;
+    newPayIcon = btn.dataset.icon;
+    renderIconPicker();
+  });
+  
+  // Seret untuk susun: pegang ikon ⋮⋮ di kiri baris, kemudian gerak ke atas / bawah
+  function makeSortable(container, onReorder) {
+    container.addEventListener('contextmenu', (e) => {
+      if (e.target.closest('.drag-handle')) e.preventDefault();
+    });
+  
+    container.addEventListener('pointerdown', (e) => {
+      const handle = e.target.closest('.drag-handle');
+      if (!handle) return;
+      const rows = [...container.children].filter((r) => r.dataset.key !== undefined);
+      const row = handle.closest('[data-key]');
+      const from = rows.indexOf(row);
+      if (from < 0) return;
+  
+      e.preventDefault();
+      const rects = rows.map((r) => r.getBoundingClientRect());
+      const h = rects[from].height;
+      const startY = e.clientY;
+      let to = from;
+      row.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+  
+      const onMove = (ev) => {
+        const minDy = rects[0].top - rects[from].top;
+        const maxDy = rects[rects.length - 1].top - rects[from].top;
+        const dy = Math.min(maxDy, Math.max(minDy, ev.clientY - startY));
+        row.style.transform = `translateY(${dy}px)`;
+  
+        const center = rects[from].top + dy + h / 2;
+        to = rects.reduce((n, r, i) => n + (i !== from && r.top + r.height / 2 < center ? 1 : 0), 0);
+  
+        rows.forEach((r, i) => {
+          if (i === from) return;
+          let shift = 0;
+          if (from < to && i > from && i <= to) shift = -h;
+          else if (from > to && i >= to && i < from) shift = h;
+          r.style.transform = shift ? `translateY(${shift}px)` : '';
+        });
+      };
+  
+      const onEnd = (ev) => {
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onEnd);
+        handle.removeEventListener('pointercancel', onEnd);
+        rows.forEach((r) => {
+          r.style.transform = '';
+          r.classList.remove('dragging');
+        });
+        if (ev.type === 'pointerup' && to !== from) {
+          const keys = rows.map((r) => r.dataset.key);
+          keys.splice(to, 0, keys.splice(from, 1)[0]);
+          onReorder(keys);
+        }
+      };
+  
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onEnd);
+      handle.addEventListener('pointercancel', onEnd);
+    });
+  }
+  
+  makeSortable($('cat-settings-list'), (keys) => {
+    catOrder = keys;
+    localStorage.setItem('catOrder', JSON.stringify(keys));
+    fillCategorySelects($('f-category').value);
+    renderCategorySettings();
+  });
+  
+  makeSortable($('pay-settings-list'), (keys) => {
+    payOrder = keys;
+    localStorage.setItem('payOrder', JSON.stringify(keys));
+    fillPaymentSelect($('f-payment').value);
+    renderPaymentSettings();
+  });
   
   const btn = e.target.closest('.icon-opt');
   if (!btn) return;

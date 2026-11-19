@@ -100,6 +100,10 @@ const I18N = {
     scan_retry: 'Pelayan sibuk. Mencuba lagi ({n}/{max})...',
     scan_done: 'Siap!',
     scan_cancel: 'Batal',
+    preview_btn: 'Pratonton',
+    zoom_in: 'Zum masuk',
+    zoom_out: 'Zum keluar',
+    zoom_reset: 'Set semula',
     scan_basic_btn: 'Imbas Asas',
     scanning_basic_title: 'Mengimbas (asas)...',
     basic_loading: 'Memuatkan enjin imbasan (kali pertama agak lama)...',
@@ -262,6 +266,10 @@ const I18N = {
     scan_retry: 'Server busy. Retrying ({n}/{max})...',
     scan_done: 'Done!',
     scan_cancel: 'Cancel',
+    preview_btn: 'Preview',
+    zoom_in: 'Zoom in',
+    zoom_out: 'Zoom out',
+    zoom_reset: 'Reset',
     scan_basic_btn: 'Basic Scan',
     scanning_basic_title: 'Scanning (basic)...',
     basic_loading: 'Loading scan engine (slow the first time)...',
@@ -634,6 +642,7 @@ function openSheet(id = null, file = null) {
 }
 
 function closeSheet() {
+  closeViewer();
   cancelScan();
   $('sheet').classList.remove('open');
   pendingFile = null;
@@ -656,6 +665,11 @@ function removeImage() {
   renderImagePreview();
 }
 
+function previewHtml(src) {
+  const label = esc(t('preview_btn'));
+  return `<div class="preview-wrap"><img src="${esc(src)}" alt="${esc(t('receipt_alt'))}" /><button type="button" class="preview-zoom-btn" onclick="openViewer()" aria-label="${label}">${ico('expand', 'ic-sm')}<span>${label}</span></button></div>`;
+}
+
 function renderImagePreview() {
   if (previewObjectUrl) {
     URL.revokeObjectURL(previewObjectUrl);
@@ -672,15 +686,15 @@ function renderImagePreview() {
       html = `<div class="pdf-badge">${ico('file')}<span>${esc(pendingFile.name)}</span></div>`;
     } else {
       previewObjectUrl = URL.createObjectURL(pendingFile);
-      html = `<img src="${previewObjectUrl}" alt="${esc(t('receipt_alt'))}" />`;
+      html = previewHtml(previewObjectUrl);
     }
   } else if (r?.image_url && !removeImageFlag) {
     hasImage = true;
     const isPdf = /\.pdf($|\?)/i.test(r.image_url);
     html = isPdf
       ? `<div class="pdf-badge">${ico('file')}<a href="${esc(r.image_url)}" target="_blank" rel="noopener" style="color:var(--primary)">${esc(t('open_pdf'))}</a></div>`
-      : `<a href="${esc(r.image_url)}" target="_blank" rel="noopener"><img src="${esc(r.image_url)}" alt="${esc(t('receipt_alt'))}" /></a>`;
-  } else {
+      : previewHtml(r.image_url);
+    } else {
     html = `<p class="muted" style="margin-bottom:10px">${esc(t('no_attachment'))}</p>`;
   }
 
@@ -690,6 +704,124 @@ function renderImagePreview() {
   $('scan-ai-btn').style.display = hasImage ? 'inline-flex' : 'none';
   $('scan-basic-btn').style.display = hasImage ? 'inline-flex' : 'none';
 }
+
+// ==========================================
+// PRATONTON GAMBAR (zoom / gerak)
+// ==========================================
+const viewer = { s: 1, x: 0, y: 0, ptrs: new Map(), multi: false, dist: 0, lastTap: 0 };
+const VIEWER_MAX = 6;
+
+function viewerApply() {
+  const img = $('viewer-img');
+  const stage = $('viewer-stage');
+  // had gerak supaya gambar tak lari keluar skrin
+  const maxX = Math.max(0, (img.clientWidth * viewer.s - stage.clientWidth) / 2);
+  const maxY = Math.max(0, (img.clientHeight * viewer.s - stage.clientHeight) / 2);
+  viewer.x = Math.min(maxX, Math.max(-maxX, viewer.x));
+  viewer.y = Math.min(maxY, Math.max(-maxY, viewer.y));
+  img.style.transform = `translate(${viewer.x}px, ${viewer.y}px) scale(${viewer.s})`;
+  $('viewer-zoom-label').textContent = Math.round(viewer.s * 100) + '%';
+}
+
+// cx, cy: titik zum, relatif kepada pusat paparan
+function viewerZoomAt(ns, cx, cy) {
+  ns = Math.min(VIEWER_MAX, Math.max(1, ns));
+  const k = ns / viewer.s;
+  viewer.x = cx - (cx - viewer.x) * k;
+  viewer.y = cy - (cy - viewer.y) * k;
+  viewer.s = ns;
+  if (ns === 1) { viewer.x = 0; viewer.y = 0; }
+  viewerApply();
+}
+
+const viewerZoomBy = (factor) => viewerZoomAt(viewer.s * factor, 0, 0);
+
+function viewerReset() {
+  viewer.s = 1; viewer.x = 0; viewer.y = 0;
+  viewerApply();
+}
+
+function openViewer() {
+  const src = $('image-preview').querySelector('img')?.src;
+  if (!src) return;
+  $('viewer-img').src = src;
+  viewer.ptrs.clear();
+  viewerReset();
+  $('img-viewer').classList.add('open');
+}
+
+function closeViewer() {
+  $('img-viewer').classList.remove('open');
+  $('viewer-img').removeAttribute('src');
+  viewer.ptrs.clear();
+}
+
+(function initViewer() {
+  const stage = $('viewer-stage');
+  const pt = (e) => {
+    const r = stage.getBoundingClientRect();
+    return { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 };
+  };
+
+  stage.addEventListener('pointerdown', (e) => {
+    stage.setPointerCapture(e.pointerId);
+    viewer.ptrs.set(e.pointerId, pt(e));
+    if (viewer.ptrs.size === 1) { viewer.multi = false; viewer.dist = 0; }
+    else viewer.multi = true;
+  });
+
+  stage.addEventListener('pointermove', (e) => {
+    const prev = viewer.ptrs.get(e.pointerId);
+    if (!prev) return;
+    const cur = pt(e);
+
+    if (viewer.ptrs.size === 1) {
+      const dx = cur.x - prev.x, dy = cur.y - prev.y;
+      viewer.dist += Math.abs(dx) + Math.abs(dy);
+      if (viewer.s > 1) { viewer.x += dx; viewer.y += dy; viewerApply(); }
+    } else if (viewer.ptrs.size === 2) {
+      const other = [...viewer.ptrs.entries()].find(([id]) => id !== e.pointerId)[1];
+      const oldDist = Math.hypot(prev.x - other.x, prev.y - other.y);
+      const newDist = Math.hypot(cur.x - other.x, cur.y - other.y);
+      const oldMid = { x: (prev.x + other.x) / 2, y: (prev.y + other.y) / 2 };
+      const newMid = { x: (cur.x + other.x) / 2, y: (cur.y + other.y) / 2 };
+      viewer.x += newMid.x - oldMid.x;
+      viewer.y += newMid.y - oldMid.y;
+      if (oldDist > 0) viewerZoomAt(viewer.s * (newDist / oldDist), newMid.x, newMid.y);
+      else viewerApply();
+    }
+    viewer.ptrs.set(e.pointerId, cur);
+  });
+
+  const endPtr = (e) => {
+    if (!viewer.ptrs.delete(e.pointerId)) return;
+    // ketuk dua kali: zum 2.5x / set semula
+    if (viewer.ptrs.size === 0 && !viewer.multi && viewer.dist < 8 && e.type === 'pointerup') {
+      const now = Date.now();
+      if (now - viewer.lastTap < 300) {
+        const p = pt(e);
+        if (viewer.s > 1) viewerReset();
+        else viewerZoomAt(2.5, p.x, p.y);
+        viewer.lastTap = 0;
+      } else {
+        viewer.lastTap = now;
+      }
+    }
+  };
+  stage.addEventListener('pointerup', endPtr);
+  stage.addEventListener('pointercancel', endPtr);
+
+  // roda tetikus (komputer)
+  stage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const p = pt(e);
+    viewerZoomAt(viewer.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15), p.x, p.y);
+  }, { passive: false });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('img-viewer').classList.contains('open')) closeViewer();
+  });
+})();
 
 // Kamera / Galeri / PDF -> masuk ke sini. TIDAK lagi auto-scan.
 // Pengguna perlu tekan butang "Imbas AI" secara manual.
@@ -1736,7 +1868,11 @@ $('receipt-list').addEventListener('click', (e) => {
   const item = e.target.closest('.receipt-item');
   if (item) openSheet(item.dataset.id);
 });
+$('image-preview').addEventListener('click', (e) => {
+  if (e.target.closest('img')) openViewer();
+});
 $('new-cat-picker').addEventListener('click', (e) => {
+  
   const btn = e.target.closest('.icon-opt');
   if (!btn) return;
   newCatIcon = btn.dataset.icon;

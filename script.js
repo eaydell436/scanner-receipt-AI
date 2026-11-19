@@ -56,6 +56,10 @@ const I18N = {
     user_id: 'ID pengguna: {id}',
     default_tag: 'Lalai',
     delete_cat_aria: 'Padam kategori',
+    cancel: 'Batal',
+    edit_aria: 'Edit',
+    cat_updated: 'Kategori dikemas kini.',
+    pay_updated: 'Cara pembayaran dikemas kini.',
     icon_aria: 'Ikon {n}',
     sheet_add: 'Tambah resit',
     sheet_edit: 'Edit resit',
@@ -224,6 +228,10 @@ const I18N = {
     user_id: 'User ID: {id}',
     default_tag: 'Default',
     delete_cat_aria: 'Delete category',
+    cancel: 'Cancel',
+    edit_aria: 'Edit',
+    cat_updated: 'Category updated.',
+    pay_updated: 'Payment method updated.',
     icon_aria: 'Icon {n}',
     sheet_add: 'Add receipt',
     sheet_edit: 'Edit receipt',
@@ -357,7 +365,8 @@ let currentLang = localStorage.getItem('lang') === 'en' ? 'en' : 'ms';
 const t = (key, params = {}) =>
   (I18N[currentLang][key] ?? I18N.ms[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => params[k] ?? '');
 
-const catLabel = (name) => CAT_LABELS[name]?.[currentLang] || name;
+  let catOverrides = loadJSON('catOverrides', {}); // { kunci: { label?, icon? } } untuk kategori lalai
+  const catLabel = (name) => catOverrides[name]?.label || CAT_LABELS[name]?.[currentLang] || name;
 
 // ==========================================
 // 1. SUPABASE & STATE
@@ -395,18 +404,21 @@ let customPays = loadJSON('customPays', []).map((p) =>
 );
 let payOrder = loadJSON('payOrder', []);
 let newPayIcon = 'tag';
+let payOverrides = loadJSON('payOverrides', {});
+let editingCatKey = null;
+let editingPayKey = null;
 
 // Pulang senarai kunci (lalai + nama tersuai) mengikut susunan pengguna
 const allPays = () =>
   sortByOrder([...PAYMENT_METHODS, ...customPays.map((p) => p.name)], payOrder, (k) => k);
 
-const payIcon = (k) => {
-  const icon = PAY_ICONS[k] || customPays.find((p) => p.name === k)?.icon;
-  return CAT_ICONS.includes(icon) ? icon : 'tag';
+  const payIcon = (k) => {
+    const icon = payOverrides[k]?.icon || PAY_ICONS[k] || customPays.find((p) => p.name === k)?.icon;
+    return CAT_ICONS.includes(icon) ? icon : 'tag';
 };
 
 // Lalai: terjemah ikut bahasa. Tersuai: papar nama asal.
-const payLabel = (k) => (k ? I18N[currentLang]['pay_' + k] ?? k : '');
+const payLabel = (k) => (k ? payOverrides[k]?.label || (I18N[currentLang]['pay_' + k] ?? k) : '');
 
 function fillPaymentSelect(selected) {
   const f = $('f-payment');
@@ -498,7 +510,7 @@ const allCats = () => sortByOrder([...DEFAULT_CATS, ...customCats], catOrder, (c
 
 // Kategori lama yang masih guna emoji (disimpan dalam localStorage) akan dipaparkan sebagai ikon 'tag'
 const catIcon = (name) => {
-  const icon = allCats().find((c) => c.name === name)?.icon;
+  const icon = catOverrides[name]?.icon || allCats().find((c) => c.name === name)?.icon;
   return CAT_ICONS.includes(icon) ? icon : 'tag';
 };
 
@@ -580,6 +592,7 @@ function applyLang(lang) {
   renderIconPicker();
   renderAccount();
   renderUserInfo();
+  syncEditUi();
 }
 const setLang = applyLang;
 
@@ -1675,10 +1688,12 @@ function renderCategorySettings() {
   $('cat-settings-list').innerHTML = allCats()
     .map((c) => {
       const ci = customCats.indexOf(c);
-      const right =
+      const extra =
         ci < 0
           ? `<span class="muted">${esc(t('default_tag'))}</span>`
           : `<button class="del" onclick="deleteCategory(${ci})" aria-label="${esc(t('delete_cat_aria'))}">${ico('trash', 'ic-sm')}</button>`;
+      const right = `<span class="row-actions"><button type="button" class="edit" aria-label="${esc(t('edit_aria'))}">${ico('pencil', 'ic-sm')}</button>${extra}</span>`;
+      
       return `
       <div class="setting-row sort-row" data-key="${esc(c.name)}">
         <span class="lead"><span class="drag-handle" style="touch-action:none" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(catIcon(c.name))}${esc(catLabel(c.name))}</span>
@@ -1697,12 +1712,15 @@ function renderIconPicker() {
   $('new-pay-picker').innerHTML = make(newPayIcon);
 }
 
-function addCategory() {
+async function addCategory() {
   const name = $('new-cat-name').value.trim();
   if (!name) return toast(t('need_cat_name'));
-  if (allCats().some((c) => c.name.toLowerCase() === name.toLowerCase() || catLabel(c.name).toLowerCase() === name.toLowerCase()))
+  const lower = name.toLowerCase();
+  if (allCats().some((c) => c.name !== editingCatKey && (c.name.toLowerCase() === lower || catLabel(c.name).toLowerCase() === lower)))
     return toast(t('cat_exists'));
+  if (editingCatKey) return saveCategoryEdit(name);
   customCats.push({ name, icon: newCatIcon });
+  
   localStorage.setItem('customCats', JSON.stringify(customCats));
   $('new-cat-name').value = '';
   newCatIcon = 'tag';
@@ -1721,6 +1739,7 @@ function deleteCategory(index) {
     : t('confirm_del_cat', { name: c.name });
   if (!confirm(msg)) return;
   customCats.splice(index, 1);
+  if (editingCatKey === c.name) cancelEditCategory();
   localStorage.setItem('customCats', JSON.stringify(customCats));
   fillCategorySelects($('f-category').value);
   renderCategorySettings();
@@ -1731,10 +1750,12 @@ function renderPaymentSettings() {
   $('pay-settings-list').innerHTML = allPays()
     .map((k) => {
       const ci = customPays.findIndex((p) => p.name === k);
-      const right =
+      const extra =
         ci < 0
           ? `<span class="muted">${esc(t('default_tag'))}</span>`
           : `<button class="del" onclick="deletePayment(${ci})" aria-label="${esc(t('delete_pay_aria'))}">${ico('trash', 'ic-sm')}</button>`;
+      const right = `<span class="row-actions"><button type="button" class="edit" aria-label="${esc(t('edit_aria'))}">${ico('pencil', 'ic-sm')}</button>${extra}</span>`;
+      
       return `
       <div class="setting-row sort-row" data-key="${esc(k)}">
         <span class="lead"><span class="drag-handle" style="touch-action:none" aria-label="${esc(t('drag_hint'))}">${ico('grip', 'ic-sm')}</span>${ico(payIcon(k))}${esc(payLabel(k))}</span>
@@ -1744,15 +1765,17 @@ function renderPaymentSettings() {
     .join('');
 }
 
-function addPayment() {
+async function addPayment() {
   const name = $('new-pay-name').value.trim();
   if (!name) return toast(t('need_pay_name'));
   const lower = name.toLowerCase();
   const exists =
-    PAYMENT_METHODS.some((k) => k === lower || payLabel(k).toLowerCase() === lower) ||
-    customPays.some((p) => p.name.toLowerCase() === lower);
+    PAYMENT_METHODS.some((k) => k !== editingPayKey && (k === lower || payLabel(k).toLowerCase() === lower)) ||
+    customPays.some((p) => p.name !== editingPayKey && p.name.toLowerCase() === lower);
   if (exists) return toast(t('pay_exists'));
+  if (editingPayKey) return savePaymentEdit(name);
   customPays.push({ name, icon: newPayIcon });
+  
   localStorage.setItem('customPays', JSON.stringify(customPays));
   $('new-pay-name').value = '';
   newPayIcon = 'tag';
@@ -1772,10 +1795,120 @@ function deletePayment(index) {
     : t('confirm_del_pay', { name });
   if (!confirm(msg)) return;
   customPays.splice(index, 1);
+  if (editingPayKey === name) cancelEditPayment();
   localStorage.setItem('customPays', JSON.stringify(customPays));
   fillPaymentSelect($('f-payment').value);
   renderPaymentSettings();
   renderHistory();
+}
+
+function syncEditUi() {
+  $('cat-add-btn').textContent = editingCatKey ? t('save') : t('add');
+  $('cat-cancel-btn').style.display = editingCatKey ? '' : 'none';
+  $('pay-add-btn').textContent = editingPayKey ? t('save') : t('add');
+  $('pay-cancel-btn').style.display = editingPayKey ? '' : 'none';
+}
+
+// ---------- Edit kategori ----------
+function startEditCategory(key) {
+  editingCatKey = key;
+  $('new-cat-name').value = catLabel(key);
+  newCatIcon = catIcon(key);
+  syncEditUi();
+  renderIconPicker();
+  $('new-cat-name').focus();
+}
+
+function cancelEditCategory() {
+  editingCatKey = null;
+  $('new-cat-name').value = '';
+  newCatIcon = 'tag';
+  syncEditUi();
+  renderIconPicker();
+}
+
+async function saveCategoryEdit(name) {
+  const key = editingCatKey;
+  const ci = customCats.findIndex((c) => c.name === key);
+
+  if (ci >= 0) {
+    if (name !== key) {
+      // tukar nama: kemas kini semua resit yang guna nama lama
+      const { error } = await supabaseClient
+        .from('receipts').update({ category: name })
+        .eq('category', key).eq('user_id', currentUser.id);
+      if (error) return toast(t('failed', { msg: error.message }));
+      receipts.forEach((r) => { if (r.category === key) r.category = name; });
+      catOrder = catOrder.map((k) => (k === key ? name : k));
+      localStorage.setItem('catOrder', JSON.stringify(catOrder));
+    }
+    customCats[ci] = { name, icon: newCatIcon };
+    localStorage.setItem('customCats', JSON.stringify(customCats));
+  } else {
+    // kategori lalai: hanya tukar paparan, nilai dalam DB kekal
+    const o = { icon: newCatIcon };
+    if (name !== (CAT_LABELS[key]?.[currentLang] || key)) o.label = name;
+    catOverrides[key] = o;
+    localStorage.setItem('catOverrides', JSON.stringify(catOverrides));
+  }
+
+  const sel = $('f-category').value;
+  cancelEditCategory();
+  fillCategorySelects(sel === key ? name : sel);
+  renderCategorySettings();
+  renderHistory();
+  renderDashboard();
+  toast(t('cat_updated'));
+}
+
+// ---------- Edit cara pembayaran ----------
+function startEditPayment(key) {
+  editingPayKey = key;
+  $('new-pay-name').value = payLabel(key);
+  newPayIcon = payIcon(key);
+  syncEditUi();
+  renderIconPicker();
+  $('new-pay-name').focus();
+}
+
+function cancelEditPayment() {
+  editingPayKey = null;
+  $('new-pay-name').value = '';
+  newPayIcon = 'tag';
+  syncEditUi();
+  renderIconPicker();
+}
+
+async function savePaymentEdit(name) {
+  const key = editingPayKey;
+  const ci = customPays.findIndex((p) => p.name === key);
+
+  if (ci >= 0) {
+    if (name !== key) {
+      const { error } = await supabaseClient
+        .from('receipts').update({ payment_method: name })
+        .eq('payment_method', key).eq('user_id', currentUser.id);
+      if (error) return toast(t('failed', { msg: error.message }));
+      receipts.forEach((r) => { if (r.payment_method === key) r.payment_method = name; });
+      payOrder = payOrder.map((k) => (k === key ? name : k));
+      localStorage.setItem('payOrder', JSON.stringify(payOrder));
+    }
+    customPays[ci] = { name, icon: newPayIcon };
+    localStorage.setItem('customPays', JSON.stringify(customPays));
+  } else {
+    const o = { icon: newPayIcon };
+    if (name !== (I18N[currentLang]['pay_' + key] ?? key)) o.label = name;
+    payOverrides[key] = o;
+    localStorage.setItem('payOverrides', JSON.stringify(payOverrides));
+  }
+
+  const sel = $('f-payment').value;
+  cancelEditPayment();
+  fillPaymentSelect(sel === key ? name : sel);
+  renderPaymentSettings();
+  renderHistory();
+  renderDashboard();
+  toast(t('pay_updated'));
 }
 
 function exportCSV() {
@@ -1929,6 +2062,15 @@ $('receipt-list').addEventListener('click', (e) => {
 $('image-preview').addEventListener('click', (e) => {
   if (e.target.closest('img')) openViewer();
 });
+$('cat-settings-list').addEventListener('click', (e) => {
+  const b = e.target.closest('.edit');
+  if (b) startEditCategory(b.closest('[data-key]').dataset.key);
+});
+$('pay-settings-list').addEventListener('click', (e) => {
+  const b = e.target.closest('.edit');
+  if (b) startEditPayment(b.closest('[data-key]').dataset.key);
+});
+
 $('new-cat-picker').addEventListener('click', (e) => {
   const btn = e.target.closest('.icon-opt');
   if (!btn) return;

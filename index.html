@@ -290,7 +290,14 @@ textarea { resize: none; }
 }
 .del:hover { color: var(--danger); }
 .cat-add { display: grid; gap: 10px; padding: 14px 0; }
-.cat-add-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.cat-add-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; gap: 8px; }
+.row-actions { display: flex; align-items: center; gap: 4px; }
+.row-actions .muted { flex: none; }
+.edit {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  padding: 6px; border-radius: 6px; display: flex;
+}
+.edit:hover { color: var(--primary); }
 .cat-add-row input { padding: 10px 12px; font-size: 15px; }
 .cat-add-row .btn { padding: 10px 14px; }
 .icon-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
@@ -727,7 +734,8 @@ input, select, textarea { min-width: 0; max-width: 100%; }
               <div class="icon-picker" id="new-cat-picker"></div>
               <div class="cat-add-row">
                 <input type="text" id="new-cat-name" data-i18n-placeholder="new_cat_ph" maxlength="24" />
-                <button class="btn btn-primary" onclick="addCategory()" data-i18n="add"></button>
+                <button class="btn btn-primary" id="cat-add-btn" onclick="addCategory()" data-i18n="add"></button>
+                <button type="button" class="btn" id="cat-cancel-btn" onclick="cancelEditCategory()" data-i18n="cancel" style="display:none"></button>
               </div>
             </div>
           </div>
@@ -739,8 +747,9 @@ input, select, textarea { min-width: 0; max-width: 100%; }
                       <div class="icon-picker" id="new-pay-picker"></div>
                       <div class="cat-add-row">
                         <input type="text" id="new-pay-name" data-i18n-placeholder="new_pay_ph" maxlength="24" />
-                        <button class="btn btn-primary" onclick="addPayment()" data-i18n="add"></button>
-                       </div>
+                        <button class="btn btn-primary" id="pay-add-btn" onclick="addPayment()" data-i18n="add"></button>
+                        <button type="button" class="btn" id="pay-cancel-btn" onclick="cancelEditPayment()" data-i18n="cancel" style="display:none"></button>
+                      </div>
                      </div>
                    </div>
           

@@ -28,6 +28,7 @@ const I18N = {
     income: 'Pendapatan',
     expense: 'Perbelanjaan',
     by_category: 'Perbelanjaan mengikut kategori',
+    by_payment: 'Perbelanjaan mengikut cara pembayaran',
     no_expense: 'Tiada perbelanjaan untuk tempoh ini.',
     add_receipt: 'Tambah resit',
     scan_info_sub: 'Ambil gambar, pilih dari galeri, atau taip manual. Tekan Imbas AI untuk baca resit.',
@@ -195,6 +196,7 @@ const I18N = {
     income: 'Income',
     expense: 'Expense',
     by_category: 'Expenses by category',
+    by_payment: 'Expenses by payment method',
     no_expense: 'No expenses for this period.',
     add_receipt: 'Add receipt',
     scan_info_sub: 'Take a photo, pick from gallery, or enter manually. Tap AI Scan to read the receipt.',
@@ -1434,6 +1436,7 @@ function renderDashboard() {
   );
   let income = 0, expense = 0;
   const byCat = {};
+  const byPay = {};
   list.forEach((r) => {
     const amt = parseFloat(r.total_amount) || 0;
     if (r.type === 'income') income += amt;
@@ -1441,6 +1444,8 @@ function renderDashboard() {
       expense += amt;
       const k = r.category || 'Lain-lain';
       byCat[k] = (byCat[k] || 0) + amt;
+      const p = r.payment_method || ''; // '' = tidak dinyatakan
+      byPay[p] = (byPay[p] || 0) + amt;
     }
   });
 
@@ -1455,6 +1460,17 @@ function renderDashboard() {
         .map(([name, amt]) => `
         <div class="bar-row">
           <div class="bar-label"><span class="name">${ico(catIcon(name), 'ic-sm')}${esc(catLabel(name))}</span><span class="amt">${money(amt)}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${expense ? (amt / expense) * 100 : 0}%"></div></div>
+        </div>`)
+        .join('')
+    : `<p class="empty-msg">${esc(t('no_expense'))}</p>`;
+
+  const payRows = Object.entries(byPay).sort((a, b) => b[1] - a[1]);
+  $('dash-pay-breakdown').innerHTML = payRows.length
+    ? payRows
+        .map(([key, amt]) => `
+        <div class="bar-row">
+          <div class="bar-label"><span class="name">${ico(payIcon(key), 'ic-sm')}${esc(key ? payLabel(key) : t('pay_none'))}</span><span class="amt">${money(amt)}</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:${expense ? (amt / expense) * 100 : 0}%"></div></div>
         </div>`)
         .join('')

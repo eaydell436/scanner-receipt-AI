@@ -738,10 +738,13 @@ input, select, textarea { min-width: 0; max-width: 100%; }
           <div class="image-box">
             <div id="image-preview"></div>
             <div class="img-actions">
-                           <button type="button" class="btn btn-primary" id="scan-ai-btn" onclick="runScan()" style="display:none">
-                             <svg class="ic ic-sm"><use href="#i-scan" /></svg><span data-i18n="scan_ai_btn"></span>
-                           </button>
-                            <button type="button" class="btn" onclick="$('file-camera').click()"><svg class="ic ic-sm"><use href="#i-camera" /></svg><span data-i18n="camera"></span></button>
+              <button type="button" class="btn btn-primary" id="scan-ai-btn" onclick="runScan()" style="display:none">
+                <svg class="ic ic-sm"><use href="#i-scan" /></svg><span data-i18n="scan_ai_btn"></span>
+              </button>
+             <button type="button" class="btn" id="scan-basic-btn" onclick="runBasicScan()" style="display:none">
+               <svg class="ic ic-sm"><use href="#i-file" /></svg><span data-i18n="scan_basic_btn"></span>
+             </button>
+<button type="button" class="btn" onclick="$('file-camera').click()"><svg class="ic ic-sm"><use href="#i-camera" /></svg><span data-i18n="camera"></span></button>
                             <button type="button" class="btn" onclick="$('file-gallery').click()"><svg class="ic ic-sm"><use href="#i-image" /></svg><span data-i18n="gallery"></span></button>
               <button type="button" class="btn" onclick="$('file-pdf').click()"><svg class="ic ic-sm"><use href="#i-file" /></svg>PDF</button>
               <button type="button" class="btn btn-danger" id="remove-image-btn" onclick="removeImage()"><svg class="ic ic-sm"><use href="#i-trash" /></svg><span data-i18n="remove"></span></button>

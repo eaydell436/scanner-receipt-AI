@@ -100,7 +100,16 @@ const I18N = {
     scan_retry: 'Pelayan sibuk. Mencuba lagi ({n}/{max})...',
     scan_done: 'Siap!',
     scan_cancel: 'Batal',
-    ai_busy: 'Pelayan AI sedang sibuk (503). Sila cuba Imbas AI sekali lagi sebentar nanti, atau isi manual.',
+    scan_basic_btn: 'Imbas Asas',
+    scanning_basic_title: 'Mengimbas (asas)...',
+    basic_loading: 'Memuatkan enjin imbasan (kali pertama agak lama)...',
+    basic_reading: 'Membaca teks... {p}%',
+    basic_pdf: 'Membaca teks PDF...',
+    basic_done: 'Siap (asas). Sila semak betul-betul, mungkin tidak tepat.',
+    basic_none: 'Tiada maklumat dapat dikesan. Cuba gambar yang lebih jelas atau isi manual.',
+    basic_failed: 'Imbasan asas gagal: {msg}',
+    basic_lib_missing: 'Pustaka imbasan tidak dapat dimuat. Sambung ke internet dan cuba lagi.',
+    ai_busy: 'Pelayan AI sedang sibuk (503). Cuba Imbas AI sekali lagi, atau guna Imbas Asas.',
     ai_done: 'Siap. Sila semak butiran sebelum simpan.',
     ai_failed: 'AI gagal: {msg}',
     need_merchant: 'Sila isi nama kedai / butiran.',
@@ -253,7 +262,16 @@ const I18N = {
     scan_retry: 'Server busy. Retrying ({n}/{max})...',
     scan_done: 'Done!',
     scan_cancel: 'Cancel',
-    ai_busy: 'The AI server is busy (503). Please tap AI Scan again shortly, or fill in manually.',
+    scan_basic_btn: 'Basic Scan',
+    scanning_basic_title: 'Scanning (basic)...',
+    basic_loading: 'Loading scan engine (slow the first time)...',
+    basic_reading: 'Reading text... {p}%',
+    basic_pdf: 'Reading PDF text...',
+    basic_done: 'Done (basic). Please check carefully, it may be inaccurate.',
+    basic_none: 'Nothing could be detected. Try a clearer image or enter manually.',
+    basic_failed: 'Basic scan failed: {msg}',
+    basic_lib_missing: 'Scan library could not be loaded. Go online and try again.',
+    ai_busy: 'The AI server is busy (503). Try AI Scan again, or use Basic Scan.',
     ai_done: 'Done. Please review the details before saving.',
     ai_failed: 'AI failed: {msg}',
     need_merchant: 'Please enter the store / description.',
@@ -670,6 +688,7 @@ function renderImagePreview() {
   $('remove-image-btn').style.display = hasImage ? 'inline-flex' : 'none';
   // Butang Imbas AI hanya muncul bila ada gambar / PDF
   $('scan-ai-btn').style.display = hasImage ? 'inline-flex' : 'none';
+  $('scan-basic-btn').style.display = hasImage ? 'inline-flex' : 'none';
 }
 
 // Kamera / Galeri / PDF -> masuk ke sini. TIDAK lagi auto-scan.
@@ -696,10 +715,10 @@ function blobToBase64(blob) {
 
 // Kecilkan gambar (maks 1280px) supaya laju & jimat kuota
 async function prepareForAI(file) {
-  if (file.type === 'application/pdf') {
+  if (isPdfFile(file)) {
     return { mimeType: 'application/pdf', image: await blobToBase64(file) };
   }
-  const bmp = await createImageBitmap(file);
+    const bmp = await createImageBitmap(file);
   const scale = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bmp.width * scale);
@@ -791,7 +810,34 @@ async function getScanSource() {
   return null;
 }
 
-// Butang "Imbas AI" (manual)
+const isPdfFile = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '');
+
+// Isi borang daripada hasil imbasan. Pulang bilangan medan yang berjaya diisi.
+function applyScanResult(r) {
+  let n = 0;
+  if (r.merchant_name) { $('f-merchant').value = r.merchant_name; n++; }
+  const amt = parseFloat(r.total_amount);
+  if (!isNaN(amt)) { $('f-amount').value = amt; n++; }
+  if (r.receipt_date) { $('f-date').value = r.receipt_date; n++; }
+  if (r.category && allCats().some((c) => c.name === r.category)) { $('f-category').value = r.category; n++; }
+  if (r.payment_method && allPays().includes(r.payment_method)) { $('f-payment').value = r.payment_method; n++; }
+  return n;
+}
+
+// Papar keadaan siap pada pop up, kemudian tutup
+function finishScan(token, doneToast) {
+  $('scan-modal').classList.add('done');
+  $('scan-modal-title').textContent = t('scan_done');
+  $('scan-modal-sub').textContent = '';
+  $('scan-cancel').style.display = 'none';
+  setTimeout(() => {
+    if (token !== scanToken) return;
+    closeScanModal();
+    toast(doneToast);
+  }, 900);
+}
+
+// Butang "Imbas AI"
 async function runScan() {
   if ($('scan-modal').classList.contains('open')) return;
   if (!currentUser) return toast(t('no_session'));
@@ -814,29 +860,270 @@ async function runScan() {
 
     const payload = await prepareForAI(file);
     const ai = await invokeScanWithRetry(payload, token);
-    if (token !== scanToken) return; // dibatalkan / sheet ditutup
+    if (token !== scanToken) return;
     if (!ai) throw new Error('Tiada data');
 
-    if (ai.merchant_name) $('f-merchant').value = ai.merchant_name;
-    if (ai.total_amount != null && !isNaN(parseFloat(ai.total_amount))) $('f-amount').value = parseFloat(ai.total_amount);
-    if (ai.receipt_date) $('f-date').value = ai.receipt_date;
-    if (ai.category && allCats().some((c) => c.name === ai.category)) $('f-category').value = ai.category;
-
-    // Keadaan siap: tunjuk tanda semak sebentar, kemudian tutup
-    $('scan-modal').classList.add('done');
-    $('scan-modal-title').textContent = t('scan_done');
-    $('scan-modal-sub').textContent = '';
-    $('scan-cancel').style.display = 'none';
-    setTimeout(() => {
-      if (token !== scanToken) return;
-      closeScanModal();
-      toast(t('ai_done'));
-    }, 900);
+    applyScanResult(ai);
+    finishScan(token, t('ai_done'));
   } catch (e) {
     if (token !== scanToken) return;
     console.warn('AI gagal baca resit:', e);
     closeScanModal();
     toast(isRetryable(e) && e.status !== 429 && !e.network ? t('ai_busy') : t('ai_failed', { msg: e.message }));
+  }
+}
+
+// ==========================================
+// IMBAS ASAS (tanpa AI): OCR untuk gambar, pdf.js untuk PDF
+// ==========================================
+const TESS_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+const PDFJS_VER = '3.11.174';
+const PDFJS_SRC = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VER}/pdf.min.js`;
+const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VER}/pdf.worker.min.js`;
+
+// Muat pustaka hanya bila perlu
+const libPromises = {};
+function loadScript(src) {
+  if (!libPromises[src]) {
+    libPromises[src] = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => {
+        delete libPromises[src];
+        reject(new Error(t('basic_lib_missing')));
+      };
+      document.head.appendChild(s);
+    });
+  }
+  return libPromises[src];
+}
+
+let ocrWorkerPromise = null;
+let ocrProgress = null;
+function getOcrWorker() {
+  if (!ocrWorkerPromise) {
+    ocrWorkerPromise = (async () => {
+      await loadScript(TESS_SRC);
+      return Tesseract.createWorker('eng', 1, {
+        logger: (m) => {
+          if (m.status === 'recognizing text' && ocrProgress) ocrProgress(Math.round(m.progress * 100));
+        },
+      });
+    })().catch((e) => {
+      ocrWorkerPromise = null;
+      throw e;
+    });
+  }
+  return ocrWorkerPromise;
+}
+
+async function ocrCanvas(canvas) {
+  const worker = await getOcrWorker();
+  const { data } = await worker.recognize(canvas);
+  return data.text || '';
+}
+
+// Kelabu + tambah kontras supaya OCR lebih tepat pada resit kertas terma
+function enhanceForOcr(canvas) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    const v = Math.max(0, Math.min(255, (g - 128) * 1.35 + 128));
+    d[i] = d[i + 1] = d[i + 2] = v;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+async function imageToOcrCanvas(file) {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(2, 1800 / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  enhanceForOcr(canvas);
+  return canvas;
+}
+
+// PDF digital: baca teks terus (tepat). PDF imbasan (tiada teks): OCR halaman pertama.
+async function pdfToText(file) {
+  await loadScript(PDFJS_SRC);
+  pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages = Math.min(pdf.numPages, 3);
+  let text = '';
+
+  for (let p = 1; p <= pages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const rows = {};
+    content.items.forEach((it) => {
+      if (!it.str.trim()) return;
+      const y = Math.round(it.transform[5] / 3); // kumpulkan teks sebaris
+      (rows[y] ||= []).push({ x: it.transform[4], s: it.str });
+    });
+    Object.keys(rows)
+      .map(Number)
+      .sort((a, b) => b - a)
+      .forEach((y) => {
+        text += rows[y].sort((a, b) => a.x - b.x).map((r) => r.s).join(' ') + '\n';
+      });
+  }
+
+  if (text.replace(/\s/g, '').length < 20) {
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    enhanceForOcr(canvas);
+    return await ocrCanvas(canvas);
+  }
+  return text;
+}
+
+// ---------- Tafsir teks resit ----------
+const pad2 = (n) => String(n).padStart(2, '0');
+const MONTHS = { jan: 1, feb: 2, mar: 3, mac: 3, apr: 4, may: 5, mei: 5, jun: 6, jul: 7, aug: 8, ogo: 8, sep: 9, oct: 10, okt: 10, nov: 11, dec: 12, dis: 12 };
+
+function ymdStr(y, m, d) {
+  if (y < 100) y += 2000;
+  if (y < 2000 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
+function findDate(text) {
+  let m, r;
+  const iso = /\b(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})\b/g;
+  while ((m = iso.exec(text))) if ((r = ymdStr(+m[1], +m[2], +m[3]))) return r;
+  const num = /\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4}|\d{2})\b/g; // Malaysia: hari/bulan/tahun
+  while ((m = num.exec(text))) if ((r = ymdStr(+m[3], +m[2], +m[1]))) return r;
+  const txt = /\b(\d{1,2})[\s\-]+([A-Za-z]{3,9})\.?[\s\-,]+(\d{4})\b/g;
+  while ((m = txt.exec(text))) {
+    const mon = MONTHS[m[2].slice(0, 3).toLowerCase()];
+    if (mon && (r = ymdStr(+m[3], mon, +m[1]))) return r;
+  }
+  return null;
+}
+
+const MONEY_RX = /(\d{1,3}(?:,\d{3})+|\d+)\.(\d{2})\b/g;
+const amountsIn = (line) =>
+  [...line.matchAll(MONEY_RX)].map((m) => parseFloat(m[1].replace(/,/g, '') + '.' + m[2]));
+const BAD_LINE = /sub\s*-?\s*total|change|baki|tunai|cash|tender|rounding|pembundaran|diskaun|discount|tax|cukai|sst|gst|service/i;
+
+function findTotal(lines) {
+  const tiers = [
+    /grand\s*total|jumlah\s*besar|jumlah\s*bayaran|amount\s*due|total\s*due|net\s*total|total\s*amount|total\s*payable|amount\s*paid/i,
+    /\btotal\b|\bjumlah\b|\bamaun\b|\bamount\b|\bjml\b/i,
+  ];
+  for (const rx of tiers) {
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (!rx.test(lines[i]) || BAD_LINE.test(lines[i])) continue;
+      let a = amountsIn(lines[i]);
+      if (!a.length && lines[i + 1]) a = amountsIn(lines[i + 1]); // label & nilai berlainan baris
+      if (a.length) return a[a.length - 1];
+    }
+  }
+  // Sandaran: nilai terbesar (bukan baris tunai/baki)
+  const all = lines.filter((l) => !BAD_LINE.test(l)).flatMap(amountsIn);
+  return all.length ? Math.max(...all) : null;
+}
+
+function findMerchant(lines) {
+  const skip = /^(tax\s*invoice|invoice|receipt|resit|e-?invoice|cash\s*(sale|bill)|duplicate|copy|salinan|welcome|selamat datang|your .*transaction|thank)/i;
+  const meta = /^(no|tel|phone|gst|sst|reg|tarikh|date)\b/i;
+  for (const l of lines.slice(0, 8)) {
+    const letters = (l.match(/[A-Za-z]/g) || []).length;
+    if (letters < 3 || letters / l.length < 0.5 || skip.test(l) || meta.test(l)) continue;
+    return l.replace(/\s{2,}/g, ' ').slice(0, 80);
+  }
+  return null;
+}
+
+function findPayment(text) {
+  const low = text.toLowerCase();
+  const custom = customPays.find((p) => low.includes(p.toLowerCase()));
+  if (custom) return custom;
+  if (/touch\s*'?n\s*go|\btng\b|grabpay|boost|shopeepay|e-?wallet|bigpay/.test(low)) return 'ewallet';
+  if (/visa|master\s*card|mastercard|credit/.test(low)) return 'credit';
+  if (/debit/.test(low)) return 'debit';
+  if (/duitnow|fpx|qr\s*pay|transfer/.test(low)) return 'transfer';
+  if (/\bcash\b|tunai/.test(low)) return 'cash';
+  return null;
+}
+
+const CAT_HINTS = [
+  ['Transportation', /petronas|shell|petron|caltex|bhp|setel|touch\s*'?n\s*go|\btol\b|parking|parkir|\bgrab\b|\blrt\b|\bmrt\b|\bktm\b|fuel|minyak/i],
+  ['F&B', /restoran|restaurant|cafe|kafe|kopitiam|mamak|nasi|mcd|mcdonald|kfc|starbucks|pizza|bakery|bubble|coffee|makan/i],
+  ['Utility', /tenaga|\btnb\b|syabas|air selangor|indah water|unifi|maxis|celcom|\bdigi\b|u mobile|telekom|astro/i],
+  ['Accommodation', /hotel|resort|\binn\b|homestay|airbnb|motel/i],
+  ['Medical', /klinik|clinic|pharmacy|farmasi|guardian|watsons?|hospital|dental|pergigian/i],
+  ['Shopping', /mydin|aeon|giant|tesco|lotus|99\s*speedmart|ikea|uniqlo|mr\.?\s*diy|econsave|jaya grocer|7-?eleven|kk\s*mart|shopee|lazada/i],
+];
+
+function parseReceiptText(text) {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const cat = CAT_HINTS.find(([, rx]) => rx.test(text))?.[0] || null;
+  return {
+    merchant_name: findMerchant(lines),
+    total_amount: findTotal(lines),
+    receipt_date: findDate(text),
+    category: cat,
+    payment_method: findPayment(text),
+  };
+}
+
+// Butang "Imbas Asas"
+async function runBasicScan() {
+  if ($('scan-modal').classList.contains('open')) return;
+  if (!$('sheet').classList.contains('open')) return;
+
+  const token = ++scanToken;
+  openScanModal();
+  $('scan-modal-title').textContent = t('scanning_basic_title');
+  $('scan-modal-sub').textContent = t('basic_loading');
+  ocrProgress = (p) => {
+    if (token === scanToken) $('scan-modal-sub').textContent = t('basic_reading', { p });
+  };
+
+  try {
+    const file = await getScanSource();
+    if (token !== scanToken) return;
+    if (!file) {
+      closeScanModal();
+      return toast(t('scan_need_image'));
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      closeScanModal();
+      return toast(t('file_too_big'));
+    }
+
+    let text;
+    if (isPdfFile(file)) {
+      $('scan-modal-sub').textContent = t('basic_pdf');
+      text = await pdfToText(file);
+    } else {
+      text = await ocrCanvas(await imageToOcrCanvas(file));
+    }
+    if (token !== scanToken) return;
+
+    const n = applyScanResult(parseReceiptText(text));
+    if (!n) {
+      closeScanModal();
+      return toast(t('basic_none'));
+    }
+    finishScan(token, t('basic_done'));
+  } catch (e) {
+    if (token !== scanToken) return;
+    console.warn('Imbasan asas gagal:', e);
+    closeScanModal();
+    toast(t('basic_failed', { msg: e.message }));
+  } finally {
+    ocrProgress = null;
   }
 }
 

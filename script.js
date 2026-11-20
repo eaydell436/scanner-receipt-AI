@@ -554,9 +554,9 @@ async function fetchReceipts() {
   const ctl = (fetchCtl = new AbortController());
   try {
     const { data, error } = await supabaseClient
-      .from('receipts').select('*')
-      .order('receipt_date', { ascending: false }).order('created_at', { ascending: false })
-      .abortSignal(ctl.signal);
+    .from('receipts').select('*').eq('user_id', currentUser.id)
+    .order('receipt_date', { ascending: false })
+    .abortSignal(ctl.signal);
     if (ctl.signal.aborted) return;
     if (error) throw error;
     receipts = (data || []).filter((r) => !pendingDeletes.has(r.id));

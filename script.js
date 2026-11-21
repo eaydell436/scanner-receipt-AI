@@ -524,7 +524,6 @@ async function initAuth() {
       }
       if (!allowed) {
         // User login berjaya (session ada) tapi tiada dalam allowlist.
-        // Ini berlaku jika trigger belum dipasang, atau row dibuang.
         await supabaseClient.auth.signOut({ scope: 'local' });
         currentUser = null;
         receipts = [];
@@ -535,6 +534,15 @@ async function initAuth() {
         return;
       }
       currentUser = session.user;
+
+      // --- CACHE FLAG ADMIN (dipindah ke DALAM try, selepas currentUser ditetapkan) ---
+      try {
+        const { data: adminFlag } = await supabaseClient.rpc('is_admin');
+        currentUser.isAdmin = !!adminFlag;
+      } catch (e) {
+        console.warn('is_admin gagal:', e);
+        currentUser.isAdmin = false;
+      }
     } else {
       if (session) await supabaseClient.auth.signOut({ scope: 'local' });
       currentUser = null;
@@ -549,15 +557,6 @@ async function initAuth() {
     toast(t('db_error', { msg: err.message }));
     renderHistory();
   }
-  currentUser = session.user;
-// --- CACHE FLAG ADMIN ---
-try {
-  const { data: adminFlag } = await supabaseClient.rpc('is_admin');
-  currentUser.isAdmin = !!adminFlag;
-} catch (e) {
-  console.warn('is_admin gagal:', e);
-  currentUser.isAdmin = false;
-}
 }
 
 // ==========================================

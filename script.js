@@ -2528,3 +2528,104 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker gagal:', e));
   });
 }
+// ==========================================
+// 7. PANEL ADMIN (allowlist)
+// ==========================================
+async function adminCall(action, payload = {}) {
+  const { data, error } = await supabaseClient.functions.invoke('admin-allowlist', {
+    body: { action, ...payload },
+  });
+  if (error) {
+    let msg = error.message;
+    try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch {}
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+async function renderAdminPanel() {
+  const section = $('admin-section');
+  const box = $('admin-body');
+  if (!section || !box) return;
+  if (!currentUser?.isAdmin) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  box.innerHTML = `<p class="muted">${esc(t('admin_loading'))}</p>`;
+  try {
+    const data = await adminCall('list');
+    const allowed = data.allowed || [];
+    const attempts = data.attempts || [];
+    const pending = attempts.filter(
+      (a) => !allowed.some((x) => String(x.email).toLowerCase() === String(a.email).toLowerCase())
+    );
+    box.innerHTML = `
+      <h4 class="admin-h">${esc(t('admin_pending'))} (${pending.length})</h4>
+      ${pending.length
+        ? pending.map((a) => `
+          <div class="admin-row">
+            <span class="admin-email">${esc(a.email)}</span>
+            <span class="muted">${esc(new Date(a.attempted_at).toLocaleString(locale()))}</span>
+            <span class="admin-actions">
+              <button type="button" class="btn btn-primary btn-sm" onclick="adminApprove('${esc(a.email)}')">${esc(t('admin_approve'))}</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="adminRejectAttempt('${esc(a.email)}')">${esc(t('admin_reject'))}</button>
+            </span>
+          </div>`).join('')
+        : `<p class="muted">${esc(t('admin_no_pending'))}</p>`}
+
+      <h4 class="admin-h">${esc(t('admin_allowed'))} (${allowed.length})</h4>
+      ${allowed.map((a) => {
+        const isSelf = (currentUser.email || '').toLowerCase() === String(a.email).toLowerCase();
+        return `
+          <div class="admin-row">
+            <span class="admin-email">${esc(a.email)}${a.note ? ` <span class="muted">— ${esc(a.note)}</span>` : ''}</span>
+            <span class="admin-actions">
+              <button type="button" class="btn btn-danger btn-sm" onclick="adminRemove('${esc(a.email)}')" ${isSelf ? 'disabled title="—"' : ''}>${esc(t('admin_remove'))}</button>
+            </span>
+          </div>`;
+      }).join('')}
+
+      <div class="admin-add">
+        <input id="admin-new-email" class="input" type="email" placeholder="${esc(t('admin_add_ph'))}" />
+        <button type="button" class="btn btn-primary" onclick="adminAddManual()">${esc(t('admin_add'))}</button>
+      </div>`;
+  } catch (e) {
+    box.innerHTML = `<p class="empty-msg">${esc(t('admin_error', { msg: e.message }))}</p>`;
+  }
+}
+
+async function adminApprove(email) {
+  try {
+    await adminCall('approve', { email });
+    toast(t('admin_approved', { email }));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
+}
+
+async function adminRejectAttempt(email) {
+  if (!(await confirmDialog(t('admin_confirm_reject', { email })))) return;
+  try {
+    await adminCall('reject_attempt', { email });
+    toast(t('admin_rejected'));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
+}
+
+async function adminRemove(email) {
+  if (!(await confirmDialog(t('admin_confirm_remove', { email })))) return;
+  try {
+    await adminCall('remove', { email });
+    toast(t('admin_removed', { email }));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
+}
+
+async function adminAddManual() {
+  const inp = $('admin-new-email');
+  const email = (inp?.value || '').trim().toLowerCase();
+  if (!email) return;
+  try {
+    await adminCall('approve', { email });
+    toast(t('admin_approved', { email }));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
+}

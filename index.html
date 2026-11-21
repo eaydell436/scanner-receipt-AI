@@ -676,16 +676,19 @@ input, select, textarea { min-width: 0; max-width: 100%; }
             <div class="setting-row"><a href="terms.html" target="_blank" rel="noopener" data-i18n="terms"></a></div>
           </div>
           <p class="muted" id="user-info" style="text-align: center; margin-top: 14px"></p>
+
+          <!-- ⬇️ ADMIN SECTION - DI DALAM view-settings, SEBELUM </main> ⬇️ -->
+          <section id="admin-section" class="card" style="display:none;margin-top:16px">
+            <h3 data-i18n="admin_title">Panel Admin</h3>
+            <p class="muted" data-i18n="admin_sub">Urus siapa boleh log masuk ke app.</p>
+            <div id="admin-body"></div>
+          </section>
+          <!-- ⬆️ TAMAT ADMIN SECTION ⬆️ -->
         </main>
       </div>
 
-      <section id="admin-section" class="card" style="display:none;margin-top:16px">
-  <h3 data-i18n="admin_title">Panel Admin</h3>
-  <p class="muted" data-i18n="admin_sub">Urus siapa boleh log masuk ke app.</p>
-  <div id="admin-body"></div>
-</section>
-
       <!-- ===== SHEET TAMBAH / EDIT ===== -->
+      
       <div class="sheet-overlay" id="sheet" onclick="if (event.target === this) closeSheet()">
         <div class="sheet">
           <div class="sheet-grip" id="sheet-grip" aria-hidden="true"></div>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasar Privasi - Receipt Tracker AI</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        @media (prefers-color-scheme: dark) { body { background: #0e141b; color: #e6ebf1; } a { color: #6a9bd1; } }
+        h1, h2 { color: #1f4e79; }
+        @media (prefers-color-scheme: dark) { h1, h2 { color: #6a9bd1; } }
+    </style>
+</head>
+<body>
+    <h1>Dasar Privasi</h1>
+    <p>Kemas kini terakhir: 21 November 2026</p>
+
+    <p>Aplikasi <strong>Receipt Tracker AI</strong> ("kami", "aplikasi") menghormati privasi anda. Dasar ini menerangkan bagaimana maklumat anda dikumpul, digunakan, dan dilindungi.</p>
+
+    <h2>1. Maklumat Yang Dikumpul</h2>
+    <ul>
+        <li><strong>Maklumat Akaun:</strong> Alamat e-mel anda (untuk tujuan log masuk menggunakan pautan sihir / magic link).</li>
+        <li><strong>Data Resit:</strong> Gambar resit, nama kedai, jumlah wang, tarikh, kategori, dan nota yang anda masukkan atau imbas.</li>
+    </ul>
+
+    <h2>2. Bagaimana Maklumat Digunakan</h2>
+    <ul>
+        <li>Untuk menyimpan rekod perbelanjaan dan pendapatan anda.</li>
+        <li>Untuk memaparkan graf, ringkasan, dan laporan perbelanjaan.</li>
+        <li>Gambar resit anda akan dihantar ke pihak ketiga (Google Gemini AI) <strong>hanya</strong> untuk tujuan mengekstrak teks (jumlah, tarikh, nama kedai) secara automatik.</li>
+    </ul>
+
+    <h2>3. Penyimpanan Data (Supabase)</h2>
+    <p>Semua data anda disimpan secara selamat menggunakan infrastruktur <strong>Supabase</strong>. Gambar resit disimpan dalam Supabase Storage, manakala teks disimpan dalam pangkalan data Supabase. Data anda disekat (Row Level Security) supaya hanya akaun anda sahaja yang boleh melihatnya.</p>
+
+    <h2>4. Perkongsian Data</h2>
+    <p>Kami <strong>tidak</strong> menjual, menyewa, atau berkongsi data peribadi anda dengan pengiklan atau pihak ketiga yang tidak berkaitan. Data hanya melalui proses automasi (Supabase & Google Gemini) untuk fungsi aplikasi.</p>
+
+    <h2>5. Hak Anda</h2>
+    <p>Anda mempunyai hak untuk memadam semua data anda pada bila-bila masa. Anda boleh menggunakan butang <strong>"Padam semua data"</strong> di dalam tab Tetapan aplikasi untuk memadam semua resit dan gambar secara kekal.</p>
+
+    <h2>6. Hubungi Kami</h2>
+    <p>Jika anda mempunyai soalan tentang dasar privasi ini, sila hubungi kami di: <strong>gameydell@gmail.com</strong></p>
+</body>
+</html>

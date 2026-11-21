@@ -79,6 +79,24 @@ const I18N = {
     pending_approval: 'Akaun anda menunggu kelulusan admin. Hubungi admin untuk dibenarkan.',
     not_allowed: 'Email ini belum diluluskan. Hubungi admin.',
     allowlist_check_failed: 'Gagal semak kebenaran akaun: {msg}',
+        // ---- admin panel ----
+    admin_title: 'Panel Admin',
+    admin_sub: 'Urus siapa boleh log masuk ke app.',
+    admin_loading: 'Memuatkan...',
+    admin_pending: 'Menunggu kelulusan',
+    admin_allowed: 'Email dibenarkan',
+    admin_no_pending: 'Tiada permohonan baharu.',
+    admin_approve: 'Luluskan',
+    admin_reject: 'Tolak',
+    admin_remove: 'Buang',
+    admin_add: 'Tambah',
+    admin_add_ph: 'email@contoh.com',
+    admin_approved: '{email} diluluskan.',
+    admin_rejected: 'Permohonan ditolak.',
+    admin_removed: '{email} dibuang dari senarai.',
+    admin_confirm_reject: 'Tolak permohonan dari "{email}"?',
+    admin_confirm_remove: 'Buang "{email}" dari senarai dibenarkan? Mereka tidak lagi boleh log masuk melalui app.',
+    admin_error: 'Ralat panel admin: {msg}',
   },
   en: {
     title_history: 'History', search_ph: 'Search store or notes', filter_all: 'All', receipts_count: '{n} receipt(s)',
@@ -157,6 +175,24 @@ const I18N = {
     pending_approval: 'Your account is awaiting admin approval. Contact admin to be allowed.',
     not_allowed: 'This email is not approved yet. Contact admin.',
     allowlist_check_failed: 'Failed to check account permission: {msg}',
+        // ---- admin panel ----
+    admin_title: 'Admin Panel',
+    admin_sub: 'Manage who can sign in to the app.',
+    admin_loading: 'Loading...',
+    admin_pending: 'Awaiting approval',
+    admin_allowed: 'Allowed emails',
+    admin_no_pending: 'No new requests.',
+    admin_approve: 'Approve',
+    admin_reject: 'Reject',
+    admin_remove: 'Remove',
+    admin_add: 'Add',
+    admin_add_ph: 'email@example.com',
+    admin_approved: '{email} approved.',
+    admin_rejected: 'Request rejected.',
+    admin_removed: '{email} removed from allowlist.',
+    admin_confirm_reject: 'Reject request from "{email}"?',
+    admin_confirm_remove: 'Remove "{email}" from allowlist? They will no longer be able to sign in via the app.',
+    admin_error: 'Admin panel error: {msg}',
   },
 };
 
@@ -513,6 +549,15 @@ async function initAuth() {
     toast(t('db_error', { msg: err.message }));
     renderHistory();
   }
+  currentUser = session.user;
+// --- CACHE FLAG ADMIN ---
+try {
+  const { data: adminFlag } = await supabaseClient.rpc('is_admin');
+  currentUser.isAdmin = !!adminFlag;
+} catch (e) {
+  console.warn('is_admin gagal:', e);
+  currentUser.isAdmin = false;
+}
 }
 
 // ==========================================
@@ -559,6 +604,7 @@ function applyLang(lang) {
   renderImagePreview(); renderHistory(); renderDashboard();
   renderCategorySettings(); renderPaymentSettings(); renderRecurringSettings();
   renderIconPicker(); renderAccount(); renderUserInfo(); syncEditUi();
+safe(renderAdminPanel);
 }
 const setLang = applyLang;
 
@@ -568,9 +614,10 @@ function switchView(viewName) {
   document.querySelectorAll('.nav-item[data-view]').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === viewName));
   $('app-content').scrollTop = 0;
   if (viewName === 'dashboard') renderDashboard();
-  if (viewName === 'settings') {
+if (viewName === 'settings') {
     renderCategorySettings(); renderPaymentSettings(); renderRecurringSettings(); renderIconPicker(); renderAccount();
-  }
+    safe(renderAdminPanel);
+}
 }
 
 function triggerScan() {
@@ -2284,6 +2331,108 @@ function makeSortable(container, onReorder) {
     document.addEventListener('pointercancel', onEnd);
     document.addEventListener('touchmove', stopScroll, { passive: false });
   });
+}
+
+// ==========================================
+// PANEL ADMIN (allowlist)
+// ==========================================
+async function adminCall(action, payload = {}) {
+  const { data, error } = await supabaseClient.functions.invoke('admin-allowlist', {
+    body: { action, ...payload },
+  });
+  if (error) {
+    let msg = error.message;
+    try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch {}
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+async function renderAdminPanel() {
+  const section = $('admin-section');
+  const box = $('admin-body');
+  if (!section || !box) return;
+  if (!currentUser?.isAdmin) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  box.innerHTML = `<p class="muted">${esc(t('admin_loading'))}</p>`;
+  try {
+    const data = await adminCall('list');
+    const allowed = data.allowed || [];
+    const attempts = data.attempts || [];
+    const pending = attempts.filter(
+      (a) => !allowed.some((x) => String(x.email).toLowerCase() === String(a.email).toLowerCase())
+    );
+    box.innerHTML = `
+      <h4 class="admin-h">${esc(t('admin_pending'))} (${pending.length})</h4>
+      ${pending.length
+        ? pending.map((a) => `
+          <div class="admin-row">
+            <span class="admin-email">${esc(a.email)}</span>
+            <span class="muted">${esc(new Date(a.attempted_at).toLocaleString(locale()))}</span>
+            <span class="admin-actions">
+              <button type="button" class="btn btn-primary btn-sm" onclick="adminApprove('${esc(a.email)}')">${esc(t('admin_approve'))}</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="adminRejectAttempt('${esc(a.email)}')">${esc(t('admin_reject'))}</button>
+            </span>
+          </div>`).join('')
+        : `<p class="muted">${esc(t('admin_no_pending'))}</p>`}
+
+      <h4 class="admin-h">${esc(t('admin_allowed'))} (${allowed.length})</h4>
+      ${allowed.map((a) => {
+        const isSelf = (currentUser.email || '').toLowerCase() === String(a.email).toLowerCase();
+        return `
+          <div class="admin-row">
+            <span class="admin-email">${esc(a.email)}${a.note ? ` <span class="muted">— ${esc(a.note)}</span>` : ''}</span>
+            <span class="admin-actions">
+              <button type="button" class="btn btn-danger btn-sm" onclick="adminRemove('${esc(a.email)}')" ${isSelf ? 'disabled title="—"' : ''}>${esc(t('admin_remove'))}</button>
+            </span>
+          </div>`;
+      }).join('')}
+
+      <div class="admin-add">
+        <input id="admin-new-email" class="input" type="email" placeholder="${esc(t('admin_add_ph'))}" />
+        <button type="button" class="btn btn-primary" onclick="adminAddManual()">${esc(t('admin_add'))}</button>
+      </div>`;
+  } catch (e) {
+    box.innerHTML = `<p class="empty-msg">${esc(t('admin_error', { msg: e.message }))}</p>`;
+  }
+}
+
+async function adminApprove(email) {
+  try {
+    await adminCall('approve', { email });
+    toast(t('admin_approved', { email }));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
+}
+
+async function adminRejectAttempt(email) {
+  if (!(await confirmDialog(t('admin_confirm_reject', { email })))) return;
+  try {
+    await adminCall('reject_attempt', { email });
+    toast(t('admin_rejected'));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
+}
+
+async function adminRemove(email) {
+  if (!(await confirmDialog(t('admin_confirm_remove', { email })))) return;
+  try {
+    await adminCall('remove', { email });
+    toast(t('admin_removed', { email }));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
+}
+
+async function adminAddManual() {
+  const inp = $('admin-new-email');
+  const email = (inp?.value || '').trim().toLowerCase();
+  if (!email) return;
+  try {
+    await adminCall('approve', { email });
+    toast(t('admin_approved', { email }));
+    renderAdminPanel();
+  } catch (e) { toast(t('failed', { msg: e.message })); }
 }
 
 // ==========================================

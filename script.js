@@ -75,6 +75,10 @@ const I18N = {
     onb2_t: 'Imbas AI', onb2_d: 'Tekan Imbas AI untuk isi kedai, jumlah dan tarikh secara automatik.',
     onb3_t: 'Lihat ringkasan', onb3_d: 'Pantau perbelanjaan, bajet dan trend di tab Ringkasan.',
     onb_next: 'Seterusnya', onb_start: 'Mula', onb_skip: 'Langkau', pull_hint: 'Tarik untuk muat semula', pull_release: 'Lepaskan untuk muat semula',
+        // ---- approval ----
+    pending_approval: 'Akaun anda menunggu kelulusan admin. Hubungi admin untuk dibenarkan.',
+    not_allowed: 'Email ini belum diluluskan. Hubungi admin.',
+    allowlist_check_failed: 'Gagal semak kebenaran akaun: {msg}',
   },
   en: {
     title_history: 'History', search_ph: 'Search store or notes', filter_all: 'All', receipts_count: '{n} receipt(s)',
@@ -149,6 +153,10 @@ const I18N = {
     onb2_t: 'AI Scan', onb2_d: 'Tap AI Scan to fill in store, amount and date automatically.',
     onb3_t: 'See the summary', onb3_d: 'Track spending, budgets and trends in the Summary tab.',
     onb_next: 'Next', onb_start: 'Start', onb_skip: 'Skip', pull_hint: 'Pull to refresh', pull_release: 'Release to refresh',
+        // ---- approval ----
+    pending_approval: 'Your account is awaiting admin approval. Contact admin to be allowed.',
+    not_allowed: 'This email is not approved yet. Contact admin.',
+    allowlist_check_failed: 'Failed to check account permission: {msg}',
   },
 };
 
@@ -463,8 +471,35 @@ async function onLoggedIn() {
 async function initAuth() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session && !session.user.is_anonymous) currentUser = session.user;
-    else {
+    if (session && !session.user.is_anonymous) {
+      // --- SEMAK ALLOWLIST ---
+      const { data: allowed, error: allowErr } = await supabaseClient.rpc('is_email_allowed');
+      if (allowErr) {
+        console.warn('Semak allowlist gagal:', allowErr.message);
+        // Gagal semak: jangan biar masuk (fail-closed)
+        await supabaseClient.auth.signOut({ scope: 'local' });
+        currentUser = null;
+        receipts = [];
+        renderUserInfo(); renderAccount();
+        loadingReceipts = false;
+        renderHistory(); renderDashboard();
+        toast(t('allowlist_check_failed', { msg: allowErr.message }));
+        return;
+      }
+      if (!allowed) {
+        // User login berjaya (session ada) tapi tiada dalam allowlist.
+        // Ini berlaku jika trigger belum dipasang, atau row dibuang.
+        await supabaseClient.auth.signOut({ scope: 'local' });
+        currentUser = null;
+        receipts = [];
+        renderUserInfo(); renderAccount();
+        loadingReceipts = false;
+        renderHistory(); renderDashboard();
+        toast(t('pending_approval'), { ms: 6000 });
+        return;
+      }
+      currentUser = session.user;
+    } else {
       if (session) await supabaseClient.auth.signOut({ scope: 'local' });
       currentUser = null;
     }
@@ -2111,7 +2146,15 @@ async function loginWithEmail() {
   const email = $('acc-email').value.trim();
   if (!isValidEmail(email)) return toast(t('invalid_email'));
   const { error } = await supabaseClient.auth.signInWithOtp({ email, options: { emailRedirectTo: REDIRECT_URL, shouldCreateUser: true } });
-  if (error) return toast(t('failed', { msg: error.message }));
+  if (error) {
+    // Trigger auth.users tolak → mesej biasanya "Database error saving new user"
+    // atau mengandungi "EMAIL_NOT_ALLOWED" / "not allowed"
+    const msg = error.message || '';
+    if (/EMAIL_NOT_ALLOWED|not.?allowed|database error saving new user/i.test(msg)) {
+      return toast(t('not_allowed'), { ms: 6000 });
+    }
+    return toast(t('failed', { msg }));
+  }
   toast(t('login_sent'));
 }
 async function signOutAccount() {
